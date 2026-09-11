@@ -1,4 +1,4 @@
-import 'react-native-url-polyfill/auto';
+﻿import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
@@ -143,3 +143,46 @@ export async function getCrewLeaderboardCloud(crewId) {
   if (error) return { ok: false, error: error.message };
   return { ok: true, members: data || [], userId: session.user.id };
 }
+export async function ensureCurrentWeeklyBattleCloud(crewId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+  const { data, error } = await supabase.rpc('ensure_current_weekly_battle', { p_crew_id: crewId });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, battle: Array.isArray(data) ? data[0] : data };
+}
+
+export async function setMyWeeklyScoreCloud(crewId, score) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+  const { data, error } = await supabase.rpc('set_my_weekly_score', {
+    p_crew_id: crewId,
+    p_score: Math.max(0, Number(score || 0)),
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, score: Array.isArray(data) ? data[0] : data, userId: session.user.id };
+}
+
+export async function getWeeklyBattleLeaderboardCloud(crewId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+  const { data, error } = await supabase.rpc('get_weekly_battle_leaderboard', { p_crew_id: crewId });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, members: data || [], userId: session.user.id };
+}
+
+export async function getPreviousWeekWinnerCloud(crewId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+  const { data, error } = await supabase.rpc('get_previous_week_winner', { p_crew_id: crewId });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, winner: (data || [])[0] || null, userId: session.user.id };
+}
+
