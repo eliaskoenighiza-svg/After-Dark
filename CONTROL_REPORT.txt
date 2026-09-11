@@ -1,0 +1,35 @@
+After[Dark – Kontrollbericht
+===========================
+
+Kontrolllauf 1
+- Alle .js/.mjs/.jsx-Inhalte mit TypeScript-Parser als JS/JSX geparst: OK
+- Alle relativen Imports auf vorhandene Dateien geprüft: OK
+- app.config.js und server/index.mjs per node --check: OK
+
+Kontrolllauf 2
+- 13 Sportarten vorhanden: OK
+- Für jede Sportart Basics / Aufsteiger / Fortgeschritten / Pro vorhanden: OK
+- Keine Radar-Implementierung oder Radar-Referenz im App-Code: OK
+- ParksTab verwendet react-native-maps mit PROVIDER_GOOGLE: OK
+- KI-Proxy lokal gestartet und ohne API-Key getestet: erwartete HTTP-503-Meldung statt Absturz: OK
+- Kein alert(), confirm(), prompt(), localStorage/sessionStorage oder window.storage im App-Code gefunden: OK
+
+Aktuelle offizielle Expo-Versionen wurden gegen die Dokumentation abgeglichen:
+- Expo SDK 57 / React Native 0.86 / React 19.2.3
+- react-native-maps 1.27.2
+- AsyncStorage 2.2.0
+- expo-audio ~57.0.4
+- expo-file-system ~57.0.6
+- expo-image-manipulator ~57.0.16
+- expo-image-picker ~57.0.16
+- react-native-svg 15.15.4
+
+Einschränkung der Kontrolle
+- npm install konnte in der isolierten Build-Umgebung wegen Netzwerk-Timeout nicht fertig ausgeführt werden.
+- Deshalb konnte hier kein echter Android-Emulator-Build gestartet werden.
+- Auf dem eigenen PC bitte npm install und anschließend npm run android ausführen. README.md enthält die Schritte.
+
+Architektur-Hinweis
+- Crew-/Chat-"shared"-Daten sind in dieser Emulator-Version noch lokal simuliert.
+- Für echte Synchronisierung zwischen mehreren Handys muss später der Shared-Storage-Adapter an ein Online-Backend angebunden werden.
+- Der Anthropic-Key liegt absichtlich nur im lokalen Proxy auf dem PC, nicht in der Android-App.

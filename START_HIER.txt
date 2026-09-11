@@ -1,0 +1,38 @@
+AFTER[DARK] – ALL-IN-ONE
+========================
+
+In diesem einen Ordner ist alles enthalten, was wir bis V4.2 aufgebaut haben:
+
+- komplette Android/Expo-App
+- neues rundes Layout
+- Skill-Baum
+- Reset-System: alle geschafften Tricks ersetzen, maximal 20 pro Monat
+- Coach / Battle / Skills / Parks / Crew / Chat / Memories
+- Google Maps
+- Supabase-Anbindung
+- echte Crew-Erstellung und Crew-Codes
+- Crew-Live-Spots mit 3-Stunden-Ablauf
+- echte Cloud-Bestenliste
+- lokaler KI-Proxy fuer den Emulator
+- alle bisher benoetigten Supabase-SQL-Dateien
+
+ERSTER START AUF EINEM NEUEN PC/ORDNER
+--------------------------------------
+1. ERSTE_EINRICHTUNG.bat starten.
+2. Supabase Project URL und Publishable Key eingeben.
+3. START_AFTER_DARK.bat starten.
+4. Optional fuer KI: START_AI_PROXY.bat starten und Anthropic-Key dort eingeben.
+
+SUPABASE-SQL
+------------
+Die bisherigen SQL-Dateien liegen unter:
+  supabase\01_basis_profile_crews.sql
+  supabase\02_crew_live_spots.sql
+  supabase\03_crew_leaderboard.sql
+
+Diese drei hast du in deinem Supabase-Projekt bereits ausgefuehrt. Du musst sie nicht erneut ausfuehren.
+
+WICHTIG
+-------
+Die Datei .env wird absichtlich NICHT mitgeliefert, damit keine persoenlichen Projektdaten in der ZIP landen.
+Wenn du bereits eine funktionierende .env aus V4.2 hast, kannst du sie einfach in diesen Ordner kopieren und ERSTE_EINRICHTUNG.bat ueberspringen.

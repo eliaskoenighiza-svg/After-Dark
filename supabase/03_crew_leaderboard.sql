@@ -1,0 +1,3 @@
+-- Bereits im Supabase SQL Editor ausgeführt.
+-- Dieses Script dokumentiert die V4.2-Abhängigkeit: public.user_stats,
+-- public.sync_my_stats(...) und public.get_crew_leaderboard(...).

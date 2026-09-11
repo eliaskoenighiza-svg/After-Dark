@@ -1,0 +1,33 @@
+After[Dark V4 – Kontrollbericht
+===============================
+
+Statischer Kontrolllauf
+- App.js, server/index.mjs und alle src/**/*.js mit TypeScript-JSX-Parser geprüft: keine Syntaxfehler.
+- Relative Imports geprüft: keine fehlenden lokalen Dateien.
+- app.config.js und server/index.mjs mit node --check geprüft: OK.
+- 13 Sportarten vorhanden.
+- Google-Maps-Parks-Tab aus V3 bleibt Bestandteil des Projekts.
+
+V4-Änderungen geprüft
+- Logo "After[Dark" in einer Zeile.
+- Neue Hauptnavigation: Coach / Skills / Battle / Parks / Mehr.
+- Crew / Chat / Memories unter "Mehr".
+- Sportauswahl standardmäßig eingeklappt.
+- KI- und Cloud-Verbindungen in einklappbarem Bereich.
+- Onboarding enthält Skill-Einschätzung "Was kannst du schon?".
+- Stunt-Scooter-Progression deutlich erweitert; Flip-Tricks erst im Pro-Bereich.
+- Coach lädt aktuellen Skillstand und nächstes Ziel als KI-Kontext.
+- Punkte werden über skills:earned dauerhaft gegen mehrfaches Farmen abgesichert.
+- Reset arbeitet mit echten Skill-Slot-Overrides: alte geschaffte Tricks verschwinden aus den betroffenen Slots und neue Ziele erscheinen.
+- Reset hat Vorschau + Abbrechen + Bestätigen.
+- Reset-Limit: 20 pro Kalendermonat.
+- Supabase-Client vorbereitet: anonyme Session, Profil-Sync, Crew erstellen, Crew-Code beitreten, eigene Crews laden.
+- Wohnort wird nicht in das Cloud-Profil geschrieben; nur der Spitzname.
+
+Noch absichtlich offen
+- Chat, Memories, Leaderboard und "wer ist draußen" verwenden in V4 noch den lokalen Shared-Prototypen. Diese Daten ziehen wir nach der Supabase-Verbindung in eigene Tabellen/Realtime um.
+- KI läuft im Emulator weiterhin über den lokalen PC-Proxy. Für die Handy-Version wird als nächster Backend-Schritt ein Cloud-Endpunkt/Edge Function eingerichtet.
+- Park-Ermittlung nutzt weiterhin die bestehende Google-Maps-Karte plus KI-Websuche. Die Umstellung auf Google Places als primäre Quelle folgt nach Einrichtung des Google-API-Projekts.
+
+Build-Hinweis
+- In dieser Umgebung wurde kein echter Android-Emulator-Build ausgeführt. Der erste reale Lauf auf dem Nutzer-PC bleibt erforderlich.

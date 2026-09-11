@@ -1,0 +1,21 @@
+After[Dark V2 Kontrollbericht
+=============================
+
+Geprüft:
+- TypeScript/JSX-Parserlauf über App.js und alle src/**/*.js: keine Syntaxfehler.
+- KI-Proxy startet.
+- GET /health mit Test-Key liefert {"ok":true,"model":"claude-sonnet-4-6"}.
+- START_AFTER_DARK.bat legt bei Bedarf automatisch .env mit Emulator-Adresse 10.0.2.2:8787 an.
+- AI-BRIDGE-Panel ist jetzt interaktiv und klappt beim Antippen direkt im Inhalt auf.
+- "Verbindung prüfen" führt einen echten Health-Check gegen den lokalen Proxy aus.
+- Google-Maps-Parks-Tab bleibt erhalten.
+- Bestehende sieben Tabs und Sportdaten bleiben erhalten.
+
+Designänderung:
+- vollständiges neues Street-HUD/Command-Design
+- kantige Panels statt runder Karten
+- nummerierte Module 01-07
+- neues AFTER // DARK Logo
+- neue Sportauswahl-Kacheln
+- statische Pink/Ice-Rails
+- HUD-Statistikleiste
