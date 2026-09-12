@@ -456,7 +456,7 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
 
 const styles = StyleSheet.create({
   stack: {
-    gap: 12,
+    gap: 10,
   },
   player: {
     gap: 8,
@@ -485,9 +485,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   trickHero: {
-    backgroundColor: '#06111DB8',
+    backgroundColor: '#09131D',
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderColor: COLORS.lineSoft,
     borderRadius: 18,
     padding: 12,
     gap: 3,
@@ -523,10 +523,10 @@ const styles = StyleSheet.create({
   cell: {
     width: '32%',
     aspectRatio: 1,
-    backgroundColor: '#07111DD9',
+    backgroundColor: '#09131D',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderColor: COLORS.lineSoft,
     padding: 7,
     alignItems: 'center',
     justifyContent: 'center',

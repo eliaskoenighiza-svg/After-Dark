@@ -18,7 +18,6 @@ function textOf(node) {
 
 function inferredVariant(children, requested) {
   if (requested) return requested;
-
   const text = textOf(children).toLowerCase();
 
   if (text.includes('trick des tages') || text.includes('nächster skill')) return 'cyan';
@@ -33,41 +32,13 @@ function inferredVariant(children, requested) {
 }
 
 const CARD = {
-  neutral: {
-    backgroundColor: COLORS.panel,
-    borderColor: COLORS.lineSoft,
-    accent: '#38536D',
-  },
-  cyan: {
-    backgroundColor: '#081821',
-    borderColor: '#1F5262',
-    accent: COLORS.ice,
-  },
-  pink: {
-    backgroundColor: '#160B16',
-    borderColor: '#57304B',
-    accent: COLORS.pink,
-  },
-  blue: {
-    backgroundColor: '#081522',
-    borderColor: '#264B69',
-    accent: COLORS.blue,
-  },
-  purple: {
-    backgroundColor: '#100D1A',
-    borderColor: '#42365F',
-    accent: COLORS.purple,
-  },
-  lime: {
-    backgroundColor: '#101608',
-    borderColor: '#445222',
-    accent: COLORS.volt,
-  },
-  night: {
-    backgroundColor: '#09131E',
-    borderColor: '#233A4E',
-    accent: '#84CFFF',
-  },
+  neutral: { background: '#09131D', border: '#172738', accent: '#4A647C' },
+  cyan: { background: '#09151C', border: '#1D3C48', accent: COLORS.ice },
+  pink: { background: '#110C14', border: '#3B2635', accent: COLORS.pink },
+  blue: { background: '#09131E', border: '#23384F', accent: COLORS.blue },
+  purple: { background: '#0E0C15', border: '#332B48', accent: COLORS.purple },
+  lime: { background: '#0D120B', border: '#314022', accent: COLORS.volt },
+  night: { background: '#09131D', border: '#203548', accent: '#79CFFF' },
 };
 
 export function Card({ children, style, variant = null, plain = false }) {
@@ -79,31 +50,18 @@ export function Card({ children, style, variant = null, plain = false }) {
       style={[
         styles.card,
         {
-          backgroundColor: plain ? COLORS.panel : look.backgroundColor,
-          borderColor: plain ? COLORS.lineSoft : look.borderColor,
+          backgroundColor: plain ? COLORS.panel : look.background,
+          borderColor: plain ? COLORS.lineSoft : look.border,
         },
         style,
       ]}
     >
       {!plain ? (
-        <>
-          <View
-            pointerEvents="none"
-            style={[
-              styles.cardGlow,
-              { backgroundColor: `${look.accent}0E` },
-            ]}
-          />
-          <View
-            pointerEvents="none"
-            style={[
-              styles.cardTopLine,
-              { backgroundColor: `${look.accent}55` },
-            ]}
-          />
-        </>
+        <View
+          pointerEvents="none"
+          style={[styles.cardAccent, { backgroundColor: look.accent }]}
+        />
       ) : null}
-
       {children}
     </View>
   );
@@ -137,18 +95,11 @@ export function Button({
       : tone === 'ice'
         ? COLORS.ice
         : tone === 'dark'
-          ? '#0A1420'
+          ? COLORS.panel2
           : COLORS.volt;
 
-  const border =
-    tone === 'dark'
-      ? COLORS.line
-      : bg;
-
-  const fg =
-    tone === 'dark'
-      ? COLORS.text
-      : COLORS.bg;
+  const border = tone === 'dark' ? COLORS.line : bg;
+  const fg = tone === 'dark' ? COLORS.text : COLORS.bg;
 
   return (
     <Pressable
@@ -165,9 +116,7 @@ export function Button({
         },
       ]}
     >
-      <Text style={[styles.buttonText, { color: fg }]}>
-        {title}
-      </Text>
+      <Text style={[styles.buttonText, { color: fg }]}>{title}</Text>
     </Pressable>
   );
 }
@@ -201,34 +150,27 @@ export function Pill({ label, active, onPress, color = COLORS.volt }) {
       style={({ pressed }) => [
         styles.pill,
         active && {
-          borderColor: color,
-          backgroundColor: `${color}13`,
+          borderColor: color + '88',
+          backgroundColor: color + '10',
         },
         pressed && { opacity: 0.8 },
       ]}
     >
-      <Text style={[styles.pillText, active && { color }]}>
-        {label}
-      </Text>
+      <Text style={[styles.pillText, active && { color }]}>{label}</Text>
     </Pressable>
   );
 }
 
 export function Notice({ children, tone = 'ice' }) {
-  const color =
-    tone === 'pink'
-      ? COLORS.pink
-      : tone === 'volt'
-        ? COLORS.volt
-        : COLORS.ice;
+  const color = tone === 'pink' ? COLORS.pink : tone === 'volt' ? COLORS.volt : COLORS.ice;
 
   return (
     <View
       style={[
         styles.notice,
         {
-          borderColor: `${color}44`,
-          backgroundColor: `${color}0B`,
+          borderColor: color + '32',
+          backgroundColor: color + '08',
         },
       ]}
     >
@@ -240,19 +182,9 @@ export function Notice({ children, tone = 'ice' }) {
 
 export function StatBadge({ label, value, color = COLORS.volt }) {
   return (
-    <View
-      style={[
-        styles.statBadge,
-        {
-          borderColor: `${color}35`,
-          backgroundColor: `${color}0D`,
-        },
-      ]}
-    >
+    <View style={[styles.statBadge, { borderColor: color + '28' }]}> 
       <Text style={styles.statValue}>{value}</Text>
-      <Text style={[styles.statLabel, { color }]}>
-        {label.toUpperCase()}
-      </Text>
+      <Text style={[styles.statLabel, { color }]}>{label.toUpperCase()}</Text>
     </View>
   );
 }
@@ -263,144 +195,137 @@ export function SectionCode({ children }) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 22,
-    padding: 15,
+    borderRadius: 18,
+    padding: 14,
     borderWidth: 1,
-    gap: 10,
+    gap: 9,
     overflow: 'hidden',
     position: 'relative',
     ...shadow,
   },
-  cardGlow: {
+  cardAccent: {
     position: 'absolute',
-    right: -42,
-    top: -58,
-    width: 140,
-    height: 140,
-    borderRadius: 999,
-  },
-  cardTopLine: {
-    position: 'absolute',
-    left: 17,
+    left: 14,
     top: 0,
-    width: 44,
+    width: 34,
     height: 2,
     borderRadius: 999,
+    opacity: 0.78,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
+    gap: 8,
   },
   titleMarker: {
     width: 3,
-    height: 17,
+    height: 15,
     borderRadius: 999,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '900',
-    fontStyle: 'italic',
-    letterSpacing: -0.25,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
   titleSmall: {
-    fontSize: 16.5,
+    fontSize: 15.5,
   },
   muted: {
     color: COLORS.muted,
-    fontSize: 13.2,
-    lineHeight: 19,
+    fontSize: 13,
+    lineHeight: 18.5,
   },
   button: {
-    minHeight: 49,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
+    minHeight: 46,
+    paddingHorizontal: 15,
+    paddingVertical: 11,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonCompact: {
-    minHeight: 39,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 13,
+    minHeight: 37,
+    paddingVertical: 7,
+    paddingHorizontal: 11,
+    borderRadius: 12,
   },
   buttonText: {
-    fontSize: 14.2,
-    fontWeight: '900',
+    fontSize: 14,
+    fontWeight: '800',
   },
   input: {
-    backgroundColor: '#09131E',
+    backgroundColor: '#08121C',
     color: COLORS.text,
     borderWidth: 1,
-    borderColor: COLORS.line,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    minHeight: 50,
-    fontSize: 15,
+    borderColor: COLORS.lineSoft,
+    borderRadius: 14,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    minHeight: 47,
+    fontSize: 14.5,
   },
   inputMulti: {
-    minHeight: 104,
+    minHeight: 100,
     textAlignVertical: 'top',
   },
   pill: {
     borderWidth: 1,
-    borderColor: COLORS.line,
-    backgroundColor: '#09131E',
+    borderColor: COLORS.lineSoft,
+    backgroundColor: '#08121C',
     borderRadius: 999,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    minHeight: 39,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    minHeight: 35,
     justifyContent: 'center',
   },
   pillText: {
     color: COLORS.muted,
-    fontWeight: '800',
-    fontSize: 13.2,
+    fontWeight: '700',
+    fontSize: 12.5,
   },
   notice: {
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 11,
+    borderRadius: 14,
+    padding: 10,
     flexDirection: 'row',
-    gap: 9,
+    gap: 8,
     alignItems: 'flex-start',
   },
   noticeBar: {
-    width: 3,
+    width: 2,
     alignSelf: 'stretch',
     borderRadius: 999,
   },
   noticeText: {
     color: COLORS.text,
-    lineHeight: 19,
+    lineHeight: 18.5,
     flex: 1,
   },
   statBadge: {
     flexGrow: 1,
     minWidth: 72,
-    paddingVertical: 9,
-    paddingHorizontal: 11,
-    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 14,
     borderWidth: 1,
+    backgroundColor: '#08121C',
   },
   statValue: {
     color: COLORS.text,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '900',
   },
   statLabel: {
-    fontSize: 10.2,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    fontSize: 9.8,
+    fontWeight: '800',
+    letterSpacing: 0.45,
     marginTop: 2,
   },
   sectionCode: {
     color: COLORS.muted,
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 1.4,
+    letterSpacing: 1.3,
   },
 });

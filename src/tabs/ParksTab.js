@@ -603,7 +603,7 @@ export default function ParksTab({ sport, profile }) {
 
 const styles = StyleSheet.create({
   stack: {
-    gap: 12,
+    gap: 10,
   },
   wrap: {
     flexDirection: 'row',
@@ -616,9 +616,9 @@ const styles = StyleSheet.create({
   filterCard: {
     minHeight: 62,
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderColor: COLORS.lineSoft,
     borderRadius: 17,
-    backgroundColor: '#06111DCC',
+    backgroundColor: '#09131D',
     paddingHorizontal: 12,
     paddingVertical: 9,
     flexDirection: 'row',
@@ -645,8 +645,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.line,
-    backgroundColor: '#06111DB8',
+    borderColor: COLORS.lineSoft,
+    backgroundColor: '#09131D',
     paddingHorizontal: 11,
     flexDirection: 'row',
     alignItems: 'center',
@@ -683,10 +683,10 @@ const styles = StyleSheet.create({
   },
   travel: {
     gap: 8,
-    backgroundColor: '#06111DB8',
+    backgroundColor: '#09131D',
     padding: 12,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderColor: COLORS.lineSoft,
   },
 });

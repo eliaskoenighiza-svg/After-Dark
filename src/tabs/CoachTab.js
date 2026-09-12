@@ -595,7 +595,7 @@ export default function CoachTab({ sport, stats, setStats, connection = null }) 
 
 const styles = StyleSheet.create({
   stack: {
-    gap: 12,
+    gap: 10,
   },
   next: {
     fontSize: 28,
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#05101AC4',
+    backgroundColor: '#09131D',
   },
   numberBadgeText: {
     fontSize: 11,
@@ -688,10 +688,10 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 14.5,
     lineHeight: 22,
-    backgroundColor: '#06111DD9',
+    backgroundColor: '#09131D',
     padding: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderColor: COLORS.lineSoft,
   },
 });

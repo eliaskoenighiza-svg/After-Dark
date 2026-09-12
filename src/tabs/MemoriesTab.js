@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderColor: COLORS.lineSoft,
   },
   image: {
     width: '100%',
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.panel2,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderColor: COLORS.lineSoft,
   },
   likeActive: {
     borderColor: COLORS.volt,

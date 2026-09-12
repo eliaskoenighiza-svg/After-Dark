@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import Logo from './src/components/Logo';
 import AppIcon from './src/components/AppIcon';
 import SportIcon from './src/components/SportIcon';
@@ -627,10 +628,33 @@ function MoreHome({
         <Text style={styles.moreHeroSub}>
           CREW · CHAT · MEMORIES
         </Text>
-        <View style={styles.moreHeroSlashWrap}>
-          <View style={styles.moreHeroSlashGlow} />
-          <View style={styles.moreHeroSlashMain} />
-          <View style={styles.moreHeroSlashKick} />
+        <View style={styles.moreHeroWaveWrap}>
+          <Svg width="128" height="30" viewBox="0 0 128 30">
+            <Defs>
+              <LinearGradient id="moreWave" x1="0" y1="0" x2="1" y2="0">
+                <Stop offset="0" stopColor={COLORS.pink} />
+                <Stop offset="0.62" stopColor="#B45CFF" />
+                <Stop offset="1" stopColor={COLORS.ice} />
+              </LinearGradient>
+            </Defs>
+            <Path
+              d="M4 17 C22 5 40 5 59 14 C79 24 96 24 124 9"
+              fill="none"
+              stroke="#FF2D87"
+              strokeOpacity={0.22}
+              strokeWidth={10}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <Path
+              d="M4 17 C22 5 40 5 59 14 C79 24 96 24 124 9"
+              fill="none"
+              stroke="url(#moreWave)"
+              strokeWidth={4.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
         </View>
       </View>
 
@@ -1163,9 +1187,6 @@ export default function App() {
         backgroundColor={COLORS.bg}
       />
 
-      <View style={styles.bgGlowOne} />
-      <View style={styles.bgGlowTwo} />
-
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.page}
@@ -1423,9 +1444,9 @@ const styles = StyleSheet.create({
   },
   page: {
     paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 7,
-    gap: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
+    gap: 10,
   },
   loadingScreen: {
     flex: 1,
@@ -1550,9 +1571,9 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   bellButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 999,
+    width: 40,
+    height: 40,
+    borderRadius: 14,
     backgroundColor: COLORS.panel,
     borderWidth: 1,
     borderColor: COLORS.lineSoft,
@@ -1570,12 +1591,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.pink,
   },
   profileChip: {
-    minHeight: 42,
-    maxWidth: 145,
+    minHeight: 40,
+    maxWidth: 142,
     backgroundColor: COLORS.panel,
     borderWidth: 1,
     borderColor: COLORS.lineSoft,
-    borderRadius: 999,
+    borderRadius: 15,
     paddingLeft: 4,
     paddingRight: 10,
     flexDirection: 'row',
@@ -1583,19 +1604,20 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   avatarWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    backgroundColor: COLORS.panel2,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatar: {
     width: 32,
     height: 32,
-    borderRadius: 999,
+    borderRadius: 11,
+    backgroundColor: COLORS.panel2,
+    borderWidth: 1,
+    borderColor: COLORS.lineSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
   },
   avatarEdit: {
     position: 'absolute',
@@ -1615,7 +1637,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   focusCard: {
-    backgroundColor: COLORS.bgSoft,
+    backgroundColor: COLORS.panel,
+    borderColor: COLORS.lineSoft,
   },
   focusRow: {
     flexDirection: 'row',
@@ -1623,9 +1646,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sportIconCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
+    width: 50,
+    height: 50,
+    borderRadius: 15,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1664,11 +1687,11 @@ const styles = StyleSheet.create({
   },
   changeSportButton: {
     backgroundColor: COLORS.panel2,
-    borderRadius: 999,
-    paddingHorizontal: 11,
-    paddingVertical: 8,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     borderWidth: 1,
-    borderColor: COLORS.line,
+    borderColor: COLORS.lineSoft,
   },
   changeSportText: {
     color: COLORS.ice,
@@ -1707,12 +1730,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   connectionCard: {
-    backgroundColor: '#0A1524',
-    borderRadius: 22,
+    backgroundColor: COLORS.panel,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#20405D',
-    padding: 11,
-    gap: 10,
+    borderColor: COLORS.lineSoft,
+    padding: 12,
+    gap: 9,
   },
   connectionHeader: {
     flexDirection: 'row',
@@ -1720,12 +1743,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   connectionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 999,
-    backgroundColor: '#0E2033',
+    width: 43,
+    height: 43,
+    borderRadius: 14,
+    backgroundColor: '#0B1A25',
     borderWidth: 1,
-    borderColor: '#2A5871',
+    borderColor: '#1D3A49',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1733,10 +1756,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   connectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 16.5,
-    fontWeight: '900',
-    fontStyle: 'italic',
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '800',
   },
   connectionSub: {
     color: COLORS.muted,
@@ -1744,14 +1766,15 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   openButton: {
-    minHeight: 38,
-    paddingHorizontal: 10,
-    borderRadius: 999,
+    minHeight: 36,
+    paddingHorizontal: 11,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: COLORS.ice,
+    borderColor: '#245267',
+    backgroundColor: '#0A1923',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 1,
+    gap: 2,
   },
   openButtonText: {
     color: COLORS.ice,
@@ -1779,72 +1802,38 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   moreHome: {
-    gap: 12,
+    gap: 10,
   },
   moreHero: {
     paddingHorizontal: 2,
-    paddingTop: 7,
-    paddingBottom: 2,
+    paddingTop: 5,
+    paddingBottom: 0,
   },
   moreHeroTitle: {
-    color: '#FFFFFF',
-    fontSize: 43,
-    lineHeight: 47,
+    color: COLORS.text,
+    fontSize: 40,
+    lineHeight: 43,
     fontWeight: '900',
     fontStyle: 'italic',
-    letterSpacing: -1.8,
+    letterSpacing: -1.5,
   },
   moreHeroSub: {
-    color: '#CFD7E4',
-    fontSize: 9.5,
-    fontWeight: '900',
-    letterSpacing: 2.7,
+    color: COLORS.muted,
+    fontSize: 9.4,
+    fontWeight: '800',
+    letterSpacing: 2.2,
     marginTop: 1,
   },
 
-  moreHeroSlashWrap: {
-    width: 124,
-    height: 26,
-    marginTop: 6,
-    position: 'relative',
-  },
-  moreHeroSlashGlow: {
-    position: 'absolute',
-    left: 2,
-    top: 10,
-    width: 112,
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: '#FF3FBD3A',
-    transform: [{ rotate: '-5deg' }],
-  },
-  moreHeroSlashMain: {
-    position: 'absolute',
-    left: 0,
-    top: 12,
-    width: 78,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: COLORS.pink,
-    transform: [{ rotate: '-7deg' }],
-    shadowColor: COLORS.pink,
-    shadowOpacity: 0.95,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  moreHeroSlashKick: {
-    position: 'absolute',
-    left: 60,
-    top: 13,
-    width: 42,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: '#74DFFF',
-    transform: [{ rotate: '11deg' }],
-    shadowColor: '#74DFFF',
-    shadowOpacity: 0.6,
-    shadowRadius: 6,
-    elevation: 3,
+
+
+
+
+  moreHeroWaveWrap: {
+    width: 128,
+    height: 28,
+    marginTop: 1,
+    marginLeft: -2,
   },
   moreTilesRow: {
     flexDirection: 'row',
@@ -1852,8 +1841,8 @@ const styles = StyleSheet.create({
   },
   moreTile: {
     flex: 1,
-    height: 142,
-    borderRadius: 21,
+    height: 132,
+    borderRadius: 18,
     overflow: 'hidden',
     borderWidth: 1,
     padding: 10,
@@ -1862,34 +1851,38 @@ const styles = StyleSheet.create({
   },
   moreTileGlow: {
     position: 'absolute',
-    width: 115,
-    height: 115,
+    width: 96,
+    height: 96,
     borderRadius: 999,
-    right: -52,
-    top: -43,
+    right: -50,
+    top: -48,
+    opacity: 0.26,
   },
   moreTileTopLine: {
     position: 'absolute',
     top: 0,
-    left: 13,
-    width: 36,
+    left: 12,
+    width: 30,
     height: 2,
     borderRadius: 999,
+    opacity: 0.78,
   },
   moreTileCode: {
     position: 'absolute',
-    right: 8,
-    top: 7,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1.4,
+    right: 9,
+    top: 8,
+    fontSize: 8.5,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    opacity: 0.55,
   },
   tileArt: {
     position: 'absolute',
     left: 7,
     right: 7,
     top: 8,
-    height: 72,
+    height: 68,
+    opacity: 0.68,
   },
   crewOrbit: {
     position: 'absolute',
@@ -1999,25 +1992,25 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
   moreTileIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 13,
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 7,
   },
   moreTileBottom: {
     gap: 2,
   },
   moreTileLabel: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    fontSize: 14.5,
+    color: COLORS.text,
+    fontWeight: '800',
+    fontSize: 14,
   },
   moreTileSub: {
-    fontSize: 9.6,
-    fontWeight: '800',
+    fontSize: 9.2,
+    fontWeight: '700',
   },
   moreTileArrow: {
     position: 'absolute',
@@ -2025,43 +2018,34 @@ const styles = StyleSheet.create({
     bottom: 27,
   },
   crewCloudCard: {
-    minHeight: 273,
-    backgroundColor: '#0B1725',
+    backgroundColor: COLORS.panel,
     borderWidth: 1,
-    borderColor: '#254965',
-    borderRadius: 23,
+    borderColor: COLORS.lineSoft,
+    borderRadius: 19,
     padding: 14,
-    gap: 11,
+    gap: 10,
     overflow: 'hidden',
   },
   crewCloudGlow: {
     position: 'absolute',
     right: -30,
-    top: -20,
-    width: 160,
-    height: 160,
+    top: -30,
+    width: 130,
+    height: 130,
     borderRadius: 999,
-    backgroundColor: `${COLORS.ice}08`,
+    backgroundColor: '#4ADFF205',
   },
   crewCloudSceneOne: {
     position: 'absolute',
-    right: 18,
-    top: 70,
-    width: 56,
-    height: 96,
-    borderRadius: 40,
-    backgroundColor: '#1B385022',
-    transform: [{ rotate: '-13deg' }],
+    width: 0,
+    height: 0,
+    opacity: 0,
   },
   crewCloudSceneTwo: {
     position: 'absolute',
-    right: 69,
-    top: 91,
-    width: 38,
-    height: 77,
-    borderRadius: 30,
-    backgroundColor: '#17354B20',
-    transform: [{ rotate: '9deg' }],
+    width: 0,
+    height: 0,
+    opacity: 0,
   },
   crewCloudTop: {
     flexDirection: 'row',
@@ -2069,40 +2053,42 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   crewCloudIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: `${COLORS.ice}0B`,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    backgroundColor: '#0A1A24',
+    borderWidth: 1,
+    borderColor: '#1C3B48',
     alignItems: 'center',
     justifyContent: 'center',
   },
   crewCloudTitle: {
-    color: '#FFFFFF',
-    fontSize: 20.5,
-    fontWeight: '900',
-    fontStyle: 'italic',
+    color: COLORS.text,
+    fontSize: 19,
+    fontWeight: '800',
     flex: 1,
   },
   newBadge: {
-    backgroundColor: COLORS.volt,
+    backgroundColor: '#CFFF3A16',
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: '#CFFF3A55',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
   },
   newBadgeText: {
-    color: COLORS.bg,
-    fontWeight: '900',
-    fontSize: 10.5,
+    color: COLORS.volt,
+    fontWeight: '800',
+    fontSize: 9.8,
   },
   crewCloudText: {
-    color: '#C9D2DF',
+    color: '#B8C2CF',
     lineHeight: 18.5,
-    fontSize: 12.3,
-    paddingRight: 8,
+    fontSize: 12.5,
   },
   crewPrimaryButton: {
-    minHeight: 49,
-    borderRadius: 999,
+    minHeight: 46,
+    borderRadius: 14,
     backgroundColor: COLORS.volt,
     flexDirection: 'row',
     alignItems: 'center',
@@ -2115,11 +2101,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   crewSecondaryButton: {
-    minHeight: 45,
-    borderRadius: 999,
+    minHeight: 43,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#31506A',
-    backgroundColor: '#0A1421CC',
+    borderColor: COLORS.line,
+    backgroundColor: '#08121C',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -2131,20 +2117,22 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
   },
   liveCard: {
-    backgroundColor: '#0A1523',
+    backgroundColor: COLORS.panel,
     borderWidth: 1,
-    borderColor: '#23445F',
-    borderRadius: 22,
-    minHeight: 128,
+    borderColor: COLORS.lineSoft,
+    borderRadius: 18,
+    minHeight: 116,
     padding: 12,
     flexDirection: 'row',
     gap: 10,
   },
   liveIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 15,
-    backgroundColor: `${COLORS.ice}0A`,
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: '#0A1A24',
+    borderWidth: 1,
+    borderColor: '#1B3947',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2208,12 +2196,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   liveStatusPill: {
-    minHeight: 34,
+    minHeight: 31,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#28465B',
-    backgroundColor: '#07111D',
-    paddingHorizontal: 10,
+    borderColor: COLORS.lineSoft,
+    backgroundColor: '#08121C',
+    paddingHorizontal: 9,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -2263,22 +2251,22 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   bottomNav: {
-    minHeight: 78,
+    minHeight: 72,
     flexDirection: 'row',
-    backgroundColor: '#050B13F5',
+    backgroundColor: '#071019F8',
     borderWidth: 1,
-    borderColor: '#193248',
-    borderRadius: 26,
-    marginHorizontal: 8,
-    marginBottom: 6,
+    borderColor: COLORS.lineSoft,
+    borderRadius: 22,
+    marginHorizontal: 10,
+    marginBottom: 8,
     paddingHorizontal: 5,
-    paddingTop: 7,
-    paddingBottom: 8,
+    paddingTop: 6,
+    paddingBottom: 7,
     shadowColor: '#000',
-    shadowOpacity: 0.38,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
   },
   navItem: {
     flex: 1,
@@ -2286,57 +2274,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 1,
     position: 'relative',
-    minHeight: 60,
+    minHeight: 56,
   },
   navIconWrap: {
-    width: 42,
-    height: 31,
-    borderRadius: 14,
+    width: 40,
+    height: 29,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   navLabel: {
-    color: '#D7DEE8',
-    fontSize: 10.3,
-    fontWeight: '800',
+    color: '#B9C3CF',
+    fontSize: 10,
+    fontWeight: '700',
     marginTop: 1,
   },
 
   navSwoosh: {
     position: 'absolute',
-    bottom: -3,
-    width: 46,
-    height: 14,
+    bottom: -2,
+    width: 40,
+    height: 11,
   },
   navSwooshGlow: {
     position: 'absolute',
     left: 1,
     top: 4,
-    width: 42,
-    height: 8,
+    width: 36,
+    height: 6,
     borderRadius: 999,
-    opacity: 0.2,
-    transform: [{ rotate: '-5deg' }],
+    opacity: 0.11,
+    transform: [{ rotate: '-4deg' }],
   },
   navSwooshMain: {
     position: 'absolute',
-    left: 2,
-    top: 6,
-    width: 31,
-    height: 3.5,
+    left: 3,
+    top: 5,
+    width: 29,
+    height: 2.5,
     borderRadius: 999,
-    shadowColor: '#FFFFFF',
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    transform: [{ rotate: '-6deg' }],
+    transform: [{ rotate: '-5deg' }],
   },
   navSwooshKick: {
     position: 'absolute',
-    left: 24,
-    top: 7,
-    width: 17,
-    height: 3.5,
+    left: 23,
+    top: 6,
+    width: 13,
+    height: 2.5,
     borderRadius: 999,
-    transform: [{ rotate: '10deg' }],
+    transform: [{ rotate: '8deg' }],
   },
 });
