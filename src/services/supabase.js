@@ -431,3 +431,159 @@ export async function deleteMyChatMessageCloud(messageId) {
   return { ok: true, deleted: Boolean(data), userId: session.user.id };
 }
 
+export async function uploadMemoryCloud(scope, crewId, imageUri) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const cleanScope = scope === 'crew' ? 'crew' : 'private';
+
+  if (cleanScope === 'crew' && !crewId) {
+    return { ok: false, error: 'Keine Crew ausgewählt.' };
+  }
+
+  try {
+    const source = new File(imageUri);
+    const body = await source.arrayBuffer();
+    const filename =
+      `${Date.now()}-${Math.random().toString(36).slice(2, 9)}.jpg`;
+
+    const objectPath = cleanScope === 'crew'
+      ? `crew/${crewId}/${session.user.id}/${filename}`
+      : `private/${session.user.id}/${filename}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('memories')
+      .upload(objectPath, body, {
+        contentType: 'image/jpeg',
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      return { ok: false, error: uploadError.message };
+    }
+
+    const { data, error } = await supabase.rpc('add_memory', {
+      p_scope: cleanScope,
+      p_crew_id: cleanScope === 'crew' ? crewId : null,
+      p_object_path: objectPath,
+    });
+
+    if (error) {
+      await supabase.storage.from('memories').remove([objectPath]);
+      return { ok: false, error: error.message };
+    }
+
+    const memory = Array.isArray(data) ? data[0] : data;
+
+    const { data: signed } = await supabase.storage
+      .from('memories')
+      .createSignedUrl(objectPath, 3600);
+
+    return {
+      ok: true,
+      memory: {
+        ...memory,
+        url: signed?.signedUrl || null,
+      },
+      userId: session.user.id,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.message || 'Memory konnte nicht hochgeladen werden.',
+    };
+  }
+}
+
+export async function getMemoriesCloud(scope, crewId = null, limit = 50) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const cleanScope = scope === 'crew' ? 'crew' : 'private';
+
+  if (cleanScope === 'crew' && !crewId) {
+    return { ok: false, error: 'Keine Crew ausgewählt.' };
+  }
+
+  const { data, error } = await supabase.rpc('get_memories', {
+    p_scope: cleanScope,
+    p_crew_id: cleanScope === 'crew' ? crewId : null,
+    p_limit: Math.min(100, Math.max(1, Number(limit || 50))),
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  const memories = await Promise.all(
+    (data || []).map(async (memory) => {
+      const { data: signed, error: signedError } = await supabase.storage
+        .from('memories')
+        .createSignedUrl(memory.object_path, 3600);
+
+      return {
+        ...memory,
+        url: signedError ? null : (signed?.signedUrl || null),
+      };
+    })
+  );
+
+  return {
+    ok: true,
+    memories,
+    userId: session.user.id,
+  };
+}
+
+export async function toggleMemoryLikeCloud(memoryId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('toggle_memory_like', {
+    p_memory_id: memoryId,
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  return {
+    ok: true,
+    liked: Boolean(data),
+    userId: session.user.id,
+  };
+}
+
+export async function deleteMyMemoryCloud(memoryId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data: objectPath, error } = await supabase.rpc('delete_my_memory', {
+    p_memory_id: memoryId,
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  const { error: storageError } = await supabase.storage
+    .from('memories')
+    .remove([objectPath]);
+
+  if (storageError) {
+    return {
+      ok: false,
+      error: 'Memory-Eintrag wurde entfernt, aber die Bilddatei konnte nicht gelöscht werden.',
+    };
+  }
+
+  return { ok: true, userId: session.user.id };
+}
+
