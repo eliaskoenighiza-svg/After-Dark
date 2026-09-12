@@ -312,7 +312,7 @@ export default function MemoriesTab({ profile }) {
                     ]}
                   >
                     <Text style={styles.likeText}>
-                      👍 {likes}
+                      Like {likes}
                     </Text>
                   </Pressable>
                 ) : null}

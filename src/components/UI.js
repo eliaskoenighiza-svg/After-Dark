@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  ImageBackground,
   Pressable,
   StyleSheet,
   Text,
@@ -8,15 +7,6 @@ import {
   View,
 } from 'react-native';
 import { COLORS, shadow } from '../theme';
-
-const SCENES = {
-  cyan: require('../../assets/card-cyan.jpg'),
-  pink: require('../../assets/card-pink.jpg'),
-  blue: require('../../assets/card-blue.jpg'),
-  purple: require('../../assets/card-purple.jpg'),
-  lime: require('../../assets/card-lime.jpg'),
-  night: require('../../assets/card-night.jpg'),
-};
 
 function textOf(node) {
   if (node == null || typeof node === 'boolean') return '';
@@ -26,58 +16,95 @@ function textOf(node) {
   return '';
 }
 
-function sceneFor(children, requested) {
-  if (requested && SCENES[requested]) return requested;
+function inferredVariant(children, requested) {
+  if (requested) return requested;
 
-  const t = textOf(children).toLowerCase();
+  const text = textOf(children).toLowerCase();
 
-  if (t.includes('trick des tages') || t.includes('nächster skill')) return 'cyan';
-  if (t.includes('session') || t.includes('countdown') || t.includes('training')) return 'lime';
-  if (t.includes('ki-') || t.includes('chat') || t.includes('nachricht')) return 'pink';
-  if (t.includes('battle') || t.includes('bingo') || t.includes('münz')) return 'purple';
-  if (t.includes('park') || t.includes('wetter') || t.includes('maps')) return 'blue';
-  if (t.includes('memory') || t.includes('memories') || t.includes('foto') || t.includes('bild')) return 'blue';
-  if (t.includes('crew') || t.includes('bestenliste') || t.includes('wochen')) return 'night';
+  if (text.includes('trick des tages') || text.includes('nächster skill')) return 'cyan';
+  if (text.includes('session') || text.includes('training') || text.includes('ziel')) return 'lime';
+  if (text.includes('ki-') || text.includes('chat') || text.includes('nachricht')) return 'pink';
+  if (text.includes('battle') || text.includes('bingo') || text.includes('münz')) return 'purple';
+  if (text.includes('park') || text.includes('maps') || text.includes('wetter')) return 'blue';
+  if (text.includes('memory') || text.includes('memories') || text.includes('foto') || text.includes('bild')) return 'blue';
+  if (text.includes('crew') || text.includes('bestenliste') || text.includes('wochen')) return 'cyan';
 
-  let hash = 0;
-  for (let i = 0; i < t.length; i += 1) hash = ((hash << 5) - hash + t.charCodeAt(i)) | 0;
-  return ['cyan', 'pink', 'blue', 'purple', 'lime', 'night'][Math.abs(hash) % 6];
+  return 'neutral';
 }
 
-const ACCENT = {
-  cyan: COLORS.ice,
-  pink: COLORS.pink,
-  blue: '#52A9FF',
-  purple: COLORS.purple,
-  lime: COLORS.volt,
-  night: '#80CFFF',
+const CARD = {
+  neutral: {
+    backgroundColor: COLORS.panel,
+    borderColor: COLORS.lineSoft,
+    accent: '#38536D',
+  },
+  cyan: {
+    backgroundColor: '#081821',
+    borderColor: '#1F5262',
+    accent: COLORS.ice,
+  },
+  pink: {
+    backgroundColor: '#160B16',
+    borderColor: '#57304B',
+    accent: COLORS.pink,
+  },
+  blue: {
+    backgroundColor: '#081522',
+    borderColor: '#264B69',
+    accent: COLORS.blue,
+  },
+  purple: {
+    backgroundColor: '#100D1A',
+    borderColor: '#42365F',
+    accent: COLORS.purple,
+  },
+  lime: {
+    backgroundColor: '#101608',
+    borderColor: '#445222',
+    accent: COLORS.volt,
+  },
+  night: {
+    backgroundColor: '#09131E',
+    borderColor: '#233A4E',
+    accent: '#84CFFF',
+  },
 };
 
-export function Card({ children, style, variant, plain = false }) {
-  const flat = StyleSheet.flatten(style) || {};
-  const noPad = flat.padding === 0;
-  const scene = sceneFor(children, variant);
-  const accent = ACCENT[scene];
-
-  if (plain) {
-    return <View style={[styles.cardPlain, style]}>{children}</View>;
-  }
+export function Card({ children, style, variant = null, plain = false }) {
+  const key = inferredVariant(children, variant);
+  const look = CARD[key] || CARD.neutral;
 
   return (
-    <View style={[styles.cardShell, { borderColor: `${accent}48` }, style]}>
-      <ImageBackground
-        source={SCENES[scene]}
-        resizeMode="cover"
-        style={styles.cardBackground}
-        imageStyle={styles.cardImage}
-      >
-        <View style={styles.cardShade} />
-        <View style={[styles.cardGlow, { backgroundColor: `${accent}24` }]} />
-        <View style={[styles.cardRail, { backgroundColor: accent }]} />
-        <View style={[styles.cardContent, noPad && styles.cardContentNoPad]}>
-          {children}
-        </View>
-      </ImageBackground>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: plain ? COLORS.panel : look.backgroundColor,
+          borderColor: plain ? COLORS.lineSoft : look.borderColor,
+        },
+        style,
+      ]}
+    >
+      {!plain ? (
+        <>
+          <View
+            pointerEvents="none"
+            style={[
+              styles.cardGlow,
+              { backgroundColor: `${look.accent}0E` },
+            ]}
+          />
+          <View
+            pointerEvents="none"
+            style={[
+              styles.cardTopLine,
+              { backgroundColor: `${look.accent}55` },
+            ]}
+          />
+        </>
+      ) : null}
+
+      {children}
     </View>
   );
 }
@@ -97,14 +124,20 @@ export function Muted({ children, style }) {
   return <Text style={[styles.muted, style]}>{children}</Text>;
 }
 
-export function Button({ title, onPress, tone = 'volt', disabled = false, compact = false }) {
+export function Button({
+  title,
+  onPress,
+  tone = 'volt',
+  disabled = false,
+  compact = false,
+}) {
   const bg =
     tone === 'pink'
       ? COLORS.pink
       : tone === 'ice'
         ? COLORS.ice
         : tone === 'dark'
-          ? '#0B1725D9'
+          ? '#0A1420'
           : COLORS.volt;
 
   const border =
@@ -112,7 +145,10 @@ export function Button({ title, onPress, tone = 'volt', disabled = false, compac
       ? COLORS.line
       : bg;
 
-  const fg = tone === 'dark' ? COLORS.text : COLORS.bg;
+  const fg =
+    tone === 'dark'
+      ? COLORS.text
+      : COLORS.bg;
 
   return (
     <Pressable
@@ -125,17 +161,25 @@ export function Button({ title, onPress, tone = 'volt', disabled = false, compac
           backgroundColor: bg,
           borderColor: border,
           opacity: disabled ? 0.42 : pressed ? 0.84 : 1,
-          transform: [{ scale: pressed && !disabled ? 0.982 : 1 }],
+          transform: [{ scale: pressed && !disabled ? 0.985 : 1 }],
         },
       ]}
     >
-      <View style={styles.buttonHighlight} />
-      <Text style={[styles.buttonText, { color: fg }]}>{title}</Text>
+      <Text style={[styles.buttonText, { color: fg }]}>
+        {title}
+      </Text>
     </Pressable>
   );
 }
 
-export function Field({ value, onChangeText, placeholder, multiline = false, keyboardType, secureTextEntry }) {
+export function Field({
+  value,
+  onChangeText,
+  placeholder,
+  multiline = false,
+  keyboardType,
+  secureTextEntry,
+}) {
   return (
     <TextInput
       value={value}
@@ -158,15 +202,14 @@ export function Pill({ label, active, onPress, color = COLORS.volt }) {
         styles.pill,
         active && {
           borderColor: color,
-          backgroundColor: `${color}16`,
-          shadowColor: color,
-          shadowOpacity: 0.18,
-          shadowRadius: 8,
+          backgroundColor: `${color}13`,
         },
-        pressed && { opacity: 0.82 },
+        pressed && { opacity: 0.8 },
       ]}
     >
-      <Text style={[styles.pillText, active && { color }]}>{label}</Text>
+      <Text style={[styles.pillText, active && { color }]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -184,8 +227,8 @@ export function Notice({ children, tone = 'ice' }) {
       style={[
         styles.notice,
         {
-          borderColor: `${color}55`,
-          backgroundColor: `${color}0E`,
+          borderColor: `${color}44`,
+          backgroundColor: `${color}0B`,
         },
       ]}
     >
@@ -201,15 +244,15 @@ export function StatBadge({ label, value, color = COLORS.volt }) {
       style={[
         styles.statBadge,
         {
-          borderColor: `${color}42`,
-          backgroundColor: `${color}12`,
-          shadowColor: color,
+          borderColor: `${color}35`,
+          backgroundColor: `${color}0D`,
         },
       ]}
     >
-      <View style={[styles.statGlow, { backgroundColor: `${color}18` }]} />
       <Text style={styles.statValue}>{value}</Text>
-      <Text style={[styles.statLabel, { color }]}>{label.toUpperCase()}</Text>
+      <Text style={[styles.statLabel, { color }]}>
+        {label.toUpperCase()}
+      </Text>
     </View>
   );
 }
@@ -219,55 +262,30 @@ export function SectionCode({ children }) {
 }
 
 const styles = StyleSheet.create({
-  cardShell: {
-    borderRadius: 24,
-    borderWidth: 1,
-    overflow: 'hidden',
-    backgroundColor: COLORS.panel,
-    ...shadow,
-  },
-  cardPlain: {
-    backgroundColor: COLORS.panel,
-    borderRadius: 24,
+  card: {
+    borderRadius: 22,
     padding: 15,
     borderWidth: 1,
-    borderColor: COLORS.lineSoft,
     gap: 10,
+    overflow: 'hidden',
+    position: 'relative',
     ...shadow,
-  },
-  cardBackground: {
-    minHeight: 1,
-  },
-  cardImage: {
-    borderRadius: 23,
-  },
-  cardShade: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#02070DCC',
   },
   cardGlow: {
     position: 'absolute',
     right: -42,
-    top: -52,
-    width: 170,
-    height: 170,
+    top: -58,
+    width: 140,
+    height: 140,
     borderRadius: 999,
   },
-  cardRail: {
+  cardTopLine: {
     position: 'absolute',
-    left: 0,
-    top: 16,
-    bottom: 16,
-    width: 3,
+    left: 17,
+    top: 0,
+    width: 44,
+    height: 2,
     borderRadius: 999,
-    opacity: 0.95,
-  },
-  cardContent: {
-    padding: 15,
-    gap: 10,
-  },
-  cardContentNoPad: {
-    padding: 0,
   },
   titleRow: {
     flexDirection: 'row',
@@ -275,93 +293,76 @@ const styles = StyleSheet.create({
     gap: 9,
   },
   titleMarker: {
-    width: 4,
-    height: 18,
+    width: 3,
+    height: 17,
     borderRadius: 999,
   },
   title: {
-    fontSize: 20.5,
+    fontSize: 20,
     fontWeight: '900',
     fontStyle: 'italic',
-    letterSpacing: -0.3,
-    textShadowColor: '#000A',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    letterSpacing: -0.25,
   },
   titleSmall: {
-    fontSize: 16.7,
+    fontSize: 16.5,
   },
   muted: {
-    color: '#A2AEC0',
+    color: COLORS.muted,
     fontSize: 13.2,
     lineHeight: 19,
   },
   button: {
-    minHeight: 50,
+    minHeight: 49,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 17,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 3,
   },
   buttonCompact: {
-    minHeight: 40,
+    minHeight: 39,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 14,
-  },
-  buttonHighlight: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    top: 1,
-    height: 1,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF55',
+    borderRadius: 13,
   },
   buttonText: {
-    fontSize: 14.5,
+    fontSize: 14.2,
     fontWeight: '900',
   },
   input: {
-    backgroundColor: '#07111DD9',
+    backgroundColor: '#09131E',
     color: COLORS.text,
     borderWidth: 1,
-    borderColor: '#29465F',
-    borderRadius: 17,
+    borderColor: COLORS.line,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
     minHeight: 50,
     fontSize: 15,
   },
   inputMulti: {
-    minHeight: 105,
+    minHeight: 104,
     textAlignVertical: 'top',
   },
   pill: {
     borderWidth: 1,
     borderColor: COLORS.line,
-    backgroundColor: '#07111DD9',
+    backgroundColor: '#09131E',
     borderRadius: 999,
     paddingHorizontal: 13,
     paddingVertical: 9,
-    minHeight: 40,
+    minHeight: 39,
     justifyContent: 'center',
   },
   pillText: {
-    color: '#A7B2C2',
+    color: COLORS.muted,
     fontWeight: '800',
-    fontSize: 13.4,
+    fontSize: 13.2,
   },
   notice: {
     borderWidth: 1,
-    borderRadius: 17,
+    borderRadius: 16,
     padding: 11,
     flexDirection: 'row',
     gap: 9,
@@ -382,33 +383,24 @@ const styles = StyleSheet.create({
     minWidth: 72,
     paddingVertical: 9,
     paddingHorizontal: 11,
-    borderRadius: 17,
+    borderRadius: 16,
     borderWidth: 1,
-    overflow: 'hidden',
-  },
-  statGlow: {
-    position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 99,
-    right: -20,
-    top: -30,
   },
   statValue: {
     color: COLORS.text,
-    fontSize: 18.5,
+    fontSize: 18,
     fontWeight: '900',
   },
   statLabel: {
-    fontSize: 10.5,
+    fontSize: 10.2,
     fontWeight: '900',
     letterSpacing: 0.5,
     marginTop: 2,
   },
   sectionCode: {
     color: COLORS.muted,
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
-    letterSpacing: 1.3,
+    letterSpacing: 1.4,
   },
 });

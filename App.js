@@ -3,7 +3,6 @@ import {
   Image,
   ImageBackground,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -121,7 +120,7 @@ function Onboarding({ onDone }) {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
       <ScrollView
@@ -302,7 +301,7 @@ function Onboarding({ onDone }) {
           </Card>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -1053,7 +1052,7 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <View style={styles.safe}>
       <StatusBar
         barStyle="light-content"
         backgroundColor={COLORS.bg}
@@ -1101,14 +1100,6 @@ export default function App() {
                     color={COLORS.ice}
                   />
                 )}
-
-                <View style={styles.avatarEdit}>
-                  <AppIcon
-                    name="edit"
-                    size={9}
-                    color={COLORS.bg}
-                  />
-                </View>
               </View>
 
               <Text style={styles.profileName}>
@@ -1279,10 +1270,11 @@ export default function App() {
               ) : null}
             </Card>
 
-            <ConnectionCard {...connectionProps} />
-
             {tab === 'coach' && (
-              <CoachTab {...common} />
+              <CoachTab
+                {...common}
+                connection={<ConnectionCard {...connectionProps} />}
+              />
             )}
             {tab === 'skills' && (
               <SkillsTab {...common} />
@@ -1311,7 +1303,7 @@ export default function App() {
         onChange={handleTabChange}
         color={tab === 'more' ? COLORS.ice : sport.color}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -1319,6 +1311,7 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: COLORS.bg,
+    paddingTop: StatusBar.currentHeight || 0,
   },
   scroll: {
     flex: 1,

@@ -15,7 +15,7 @@ const fmt = (sec) =>
 const dateKey = () =>
   new Date().toISOString().slice(0, 10);
 
-export default function CoachTab({ sport, stats, setStats }) {
+export default function CoachTab({ sport, stats, setStats, connection = null }) {
   const beep = useAudioPlayer(require('../../assets/beep.wav'));
 
   const [skillContext, setSkillContext] = useState({
@@ -285,6 +285,8 @@ export default function CoachTab({ sport, stats, setStats }) {
         subtitle="TRICK DES TAGES · SESSION · KI"
         accent={sport.color}
       />
+
+      {connection}
 
       {notice ? (
         <Notice>{notice}</Notice>
