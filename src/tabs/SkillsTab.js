@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Card, Button, Muted, Notice, Title } from '../components/UI';
 import { COLORS } from '../theme';
 import { effectiveLevels, effectiveSlots, nextRecommendedSkill } from '../services/skills';
 import { localGet, localSet, sharedGet, sharedSet } from '../storage';
 import { askAI } from '../services/ai';
+import { cloudConfigured, getMyCrews, setMyWeeklyGoalCloud, setMyWeeklyGoalDoneCloud } from '../services/supabase';
 
 const weekKey = () => {
   const d = new Date();
@@ -121,10 +122,41 @@ export default function SkillsTab({ sport, profile, stats, setStats }) {
     })();
   }, [sport.id]);
 
+  const resolveGoalCrewId = async () => {
+    const remembered = await localGet('crew:activeCloudCrewId', null);
+    if (remembered) return remembered;
+    if (!cloudConfigured()) return null;
+
+    const result = await getMyCrews();
+    if (!result.ok) return null;
+
+    const first = result.crews?.[0]?.id || null;
+    if (first) await localSet('crew:activeCloudCrewId', first);
+    return first;
+  };
+
   const syncSharedGoal = async (g) => {
     const key = `crew:goals:${weekKey()}`;
     const all = await sharedGet(key, {});
     await sharedSet(key, { ...all, [profile.nickname]: { nickname: profile.nickname, sport: sport.name, ...g } });
+
+    if (!cloudConfigured()) return;
+
+    const crewId = await resolveGoalCrewId();
+    if (!crewId) return;
+
+    const saved = await setMyWeeklyGoalCloud(crewId, g.name, sport.name);
+    if (!saved.ok) {
+      setNotice(`Crew-Cloud: ${saved.error || 'Wochenziel konnte nicht gespeichert werden.'}`);
+      return;
+    }
+
+    if (g.done) {
+      const doneResult = await setMyWeeklyGoalDoneCloud(crewId, true);
+      if (!doneResult.ok) {
+        setNotice(`Crew-Cloud: ${doneResult.error || 'Zielstatus konnte nicht gespeichert werden.'}`);
+      }
+    }
   };
 
   const toggle = async (name) => {

@@ -186,3 +186,61 @@ export async function getPreviousWeekWinnerCloud(crewId) {
   return { ok: true, winner: (data || [])[0] || null, userId: session.user.id };
 }
 
+export async function setMyWeeklyGoalCloud(crewId, goalName, sportName) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('set_my_weekly_goal', {
+    p_crew_id: crewId,
+    p_goal_name: String(goalName || '').trim(),
+    p_sport_name: String(sportName || 'Freestyle').trim(),
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, goal: Array.isArray(data) ? data[0] : data, userId: session.user.id };
+}
+
+export async function setMyWeeklyGoalDoneCloud(crewId, done) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('set_my_weekly_goal_done', {
+    p_crew_id: crewId,
+    p_done: Boolean(done),
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, goal: Array.isArray(data) ? data[0] : data, userId: session.user.id };
+}
+
+export async function deleteMyWeeklyGoalCloud(crewId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('delete_my_weekly_goal', {
+    p_crew_id: crewId,
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, deleted: Boolean(data), userId: session.user.id };
+}
+
+export async function getWeeklyGoalsCloud(crewId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('get_weekly_goals', {
+    p_crew_id: crewId,
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, goals: data || [], userId: session.user.id };
+}

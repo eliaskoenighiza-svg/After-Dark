@@ -4,7 +4,7 @@ import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/U
 import { COLORS } from '../theme';
 import { dumpAllData, localGet, localSet, restoreAllData, sharedGet, sharedSet } from '../storage';
 import { weeklyReviewAI } from '../services/ai';
-import { cloudConfigured, createCrewCloud, getMyCrews, joinCrewCloud, syncCloudProfile, setMySpotCloud, clearMySpotCloud, getActiveCrewSpotsCloud, syncMyStatsCloud, getCrewLeaderboardCloud, setMyWeeklyScoreCloud, getWeeklyBattleLeaderboardCloud, getPreviousWeekWinnerCloud } from '../services/supabase';
+import { cloudConfigured, createCrewCloud, getMyCrews, joinCrewCloud, syncCloudProfile, setMySpotCloud, clearMySpotCloud, getActiveCrewSpotsCloud, syncMyStatsCloud, getCrewLeaderboardCloud, setMyWeeklyScoreCloud, getWeeklyBattleLeaderboardCloud, getPreviousWeekWinnerCloud, getWeeklyGoalsCloud } from '../services/supabase';
 import { openEmergency } from '../services/maps';
 import { pickAndResizeImage, persistImage } from '../services/media';
 
@@ -37,6 +37,8 @@ export default function CrewTab({ profile, sport, stats }) {
   const [cloudWeekly, setCloudWeekly] = useState([]);
   const [cloudPreviousWinner, setCloudPreviousWinner] = useState(null);
   const [weeklyNotice, setWeeklyNotice] = useState('');
+  const [cloudGoals, setCloudGoals] = useState([]);
+  const [goalsNotice, setGoalsNotice] = useState('');
   const [goals, setGoals] = useState({});
 
   const loadLocalCrew = async () => {
@@ -122,6 +124,35 @@ export default function CrewTab({ profile, sport, stats }) {
     setWeeklyNotice(winnerResult.ok ? '' : (winnerResult.error || 'Vorwochensieger konnte nicht geladen werden.'));
   };
 
+  const refreshWeeklyGoals = async (crewId = activeCrewId) => {
+    if (!crewId || !cloudConfigured()) {
+      setCloudGoals([]);
+      setGoalsNotice('');
+      return;
+    }
+
+    const result = await getWeeklyGoalsCloud(crewId);
+    if (result.ok) {
+      setCloudGoals(result.goals || []);
+      setGoalsNotice('');
+    } else {
+      setGoalsNotice(result.error || 'Wochenziele konnten nicht geladen werden.');
+    }
+  };
+
+  // WEEKLY_GOALS_CLOUD_EFFECT
+  useEffect(() => {
+    if (!activeCrewId || !cloudConfigured()) {
+      setCloudGoals([]);
+      return;
+    }
+
+    localSet('crew:activeCloudCrewId', activeCrewId);
+    refreshWeeklyGoals(activeCrewId);
+
+    const id = setInterval(() => refreshWeeklyGoals(activeCrewId), 5000);
+    return () => clearInterval(id);
+  }, [activeCrewId]);
   // WEEKLY_BATTLE_CLOUD_EFFECT
   useEffect(() => {
     if (!activeCrewId || !cloudConfigured()) {
@@ -355,7 +386,33 @@ export default function CrewTab({ profile, sport, stats }) {
           </>
         )}
       </Card>
-      <Card><Title small>Ziele der Woche</Title>{Object.values(goals).length ? Object.values(goals).map((g) => <View key={g.nickname} style={styles.out}><Text style={styles.body}><Text style={styles.bold}>{g.nickname}</Text> Â· {g.done ? 'âœ“ ' : ''}{g.name}</Text><Muted>{g.sport}</Muted></View>) : <Muted>Noch kein Crew-Ziel fÃ¼r diese Woche.</Muted>}</Card>
+      <Card>
+        <Title small>Ziele der Woche</Title>
+        {activeCrewId && cloudConfigured() ? (
+          <>
+            {goalsNotice ? <Notice tone="pink">{goalsNotice}</Notice> : null}
+            {cloudGoals.length ? cloudGoals.map((g) => (
+              <View key={g.user_id} style={styles.out}>
+                <Text style={styles.body}>
+                  <Text style={styles.bold}>{g.nickname}</Text> - {g.done ? '[OK] ' : ''}{g.goal_name}
+                </Text>
+                <Muted>{g.sport_name}</Muted>
+              </View>
+            )) : <Muted>Noch keine Cloud-Ziele in dieser Crew.</Muted>}
+          </>
+        ) : (
+          <>
+            {Object.values(goals).length ? Object.values(goals).map((g) => (
+              <View key={g.nickname} style={styles.out}>
+                <Text style={styles.body}>
+                  <Text style={styles.bold}>{g.nickname}</Text> - {g.done ? '[OK] ' : ''}{g.name}
+                </Text>
+                <Muted>{g.sport}</Muted>
+              </View>
+            )) : <Muted>Noch kein Crew-Ziel fuer diese Woche.</Muted>}
+          </>
+        )}
+      </Card>
       <Card><Title small>Park-Spots teilen</Title><Button title="ðŸ“· Spot-Foto teilen" tone="ice" onPress={sharePark} />{sharedSpots.map((x) => <View key={x.id} style={styles.photoWrap}><Image source={{ uri: x.uri }} style={styles.photo} /><Muted>{x.by} Â· {x.sport}</Muted></View>)}</Card>
       <Card><Title small>KI-WochenrÃ¼ckblick</Title><Button title="RÃ¼ckblick erstellen" tone="dark" onPress={recap} />{review ? <Text style={styles.body}>{review}</Text> : null}</Card>
       <Card><Title small>ðŸš‘ Notfall-Karte</Title><Notice tone="pink">Bei Verdacht auf Kopf-, Nacken- oder RÃ¼ckenverletzung nicht unnÃ¶tig bewegen. Helm nicht einfach abnehmen. Bewusstlos, aber normale Atmung: stabile Seitenlage, soweit ohne zusÃ¤tzliche GefÃ¤hrdung mÃ¶glich. Nach einem Kopftreffer Session beenden und Beschwerden ernst nehmen.</Notice><View style={styles.row}><Button title="112" tone="pink" onPress={() => openEmergency('112')} /><Button title="116117" tone="ice" onPress={() => openEmergency('116117')} /></View><Field value={contact} onChangeText={setContact} placeholder="PersÃ¶nlicher Notfallkontakt" /><Button title="Kontakt speichern" tone="dark" onPress={saveContact} /></Card>
