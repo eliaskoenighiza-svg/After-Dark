@@ -158,7 +158,7 @@ export default function CoachTab({ sport, stats, setStats }) {
         <Title small>KI-Trick-Coach</Title>
         <Muted>Die KI bekommt deinen aktuellen Skillstand mit. Ein Foto wird vor dem Senden auf maximal 1024 Pixel verkleinert.</Muted>
         <Field value={question} onChangeText={setQuestion} placeholder="z. B. Warum bekomme ich beim Fingerwhip das Deck nicht zurück?" multiline />
-        <Button title={coachImage ? '📷 Foto gewählt' : '📷 Foto hinzufügen'} tone="dark" onPress={chooseCoachImage} />
+        <Button title={coachImage ? 'Foto gewählt' : 'Foto hinzufügen'} tone="dark" onPress={chooseCoachImage} />
         {coachImage ? <Image source={{ uri: coachImage.uri }} style={styles.preview} /> : null}
         <Button title={coachBusy ? 'Coach denkt…' : 'Coach fragen'} disabled={coachBusy || (!question.trim() && !coachImage)} onPress={() => runCoach(false)} />
         {coachAnswer ? <Text style={styles.answer}>{coachAnswer}</Text> : null}

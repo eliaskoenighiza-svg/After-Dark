@@ -250,7 +250,7 @@ export default function MemoriesTab({ profile }) {
         </Muted>
 
         <Button
-          title={busy ? 'Bitte warten…' : '📷 Bild hinzufügen'}
+          title={busy ? 'Bitte warten…' : 'Bild hinzufügen'}
           disabled={busy}
           onPress={add}
         />

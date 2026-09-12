@@ -319,8 +319,8 @@ export default function CrewTab({ profile, sport, stats }) {
   };
   const saveContact = async () => { await localSet('emergency:contact', contact); setNotice('Notfallkontakt lokal gespeichert.'); };
   const makeBackup = async () => { setBackup(await dumpAllData()); setNotice('Datensicherung erstellt. Text kopieren und sicher aufheben.'); };
-  const doRestore = async () => { try { const n = await restoreAllData(restore); setNotice(`${n} gespeicherte EintrÃ¤ge zurÃ¼ckgespielt. App danach neu starten.`); } catch { setNotice('Sicherung konnte nicht gelesen werden.'); } };
-  const recap = async () => { setReview('Erstelle RÃ¼ckblickâ€¦'); try { setReview(await weeklyReviewAI({ ...stats, weeklyScore: weekly.members?.[profile.nickname]?.score || 0 }, sport)); } catch (e) { setReview(e.message); } };
+  const doRestore = async () => { try { const n = await restoreAllData(restore); setNotice(`${n} gespeicherte Einträge zurückgespielt. App danach neu starten.`); } catch { setNotice('Sicherung konnte nicht gelesen werden.'); } };
+  const recap = async () => { setReview('Erstelle Rückblick…'); try { setReview(await weeklyReviewAI({ ...stats, weeklyScore: weekly.members?.[profile.nickname]?.score || 0 }, sport)); } catch (e) { setReview(e.message); } };
   const sharePark = async () => {
     const img = await pickAndResizeImage();
     if (!img) return;
@@ -383,7 +383,7 @@ export default function CrewTab({ profile, sport, stats }) {
           </View>
         )) : <Muted>{cloudConfigured() ? 'Noch keine Crew.' : 'Supabase-Zugangsdaten fehlen noch in .env.'}</Muted>}
         <Field value={crewName} onChangeText={setCrewName} placeholder="Neue Crew, z. B. Black Forest Riders" />
-        <Button title={cloudBusy ? 'Bitte wartenâ€¦' : 'Crew erstellen'} disabled={cloudBusy || !crewName.trim()} onPress={createCrew} />
+        <Button title={cloudBusy ? 'Bitte warten…' : 'Crew erstellen'} disabled={cloudBusy || !crewName.trim()} onPress={createCrew} />
         <Field value={joinCode} onChangeText={(t) => setJoinCode(t.toUpperCase())} placeholder="6-stelligen Crew-Code eingeben" />
         <Button title="Crew beitreten" tone="dark" disabled={cloudBusy || !joinCode.trim()} onPress={joinCrew} />
       </Card>
@@ -391,10 +391,10 @@ export default function CrewTab({ profile, sport, stats }) {
       <Notice>Live-Spots, Bestenliste, Wochen-Battle, Ziele und Spot-Fotos laufen jetzt über die echte Crew-Cloud.</Notice>
 
       <Card>
-        <Title color={sport.color}>Wer ist gerade drauÃŸen?</Title>
+        <Title color={sport.color}>Wer ist gerade draußen?</Title>
         {cloudCrews.length > 1 ? (
           <>
-            <Muted>FÃ¼r welche Crew?</Muted>
+            <Muted>Für welche Crew?</Muted>
             <View style={styles.row}>
               {cloudCrews.map((c) => <Pill key={c.id} label={c.name} active={activeCrewId === c.id} color={sport.color} onPress={() => setActiveCrewId(c.id)} />)}
             </View>
@@ -402,32 +402,32 @@ export default function CrewTab({ profile, sport, stats }) {
         ) : cloudCrews.length === 1 ? <Muted>Crew: {cloudCrews[0].name}</Muted> : <Muted>Erstelle oder betrete zuerst eine Crew. Ohne Crew nutzt dieser Bereich nur den lokalen Testmodus.</Muted>}
         {presenceNotice ? <Notice tone="pink">{presenceNotice}</Notice> : null}
         <Field value={spot} onChangeText={setSpot} placeholder="Spot eintragen, z. B. Skatepark Titisee" />
-        <Button title={presenceBusy ? 'Speichereâ€¦' : 'Ich bin drauÃŸen'} disabled={presenceBusy || !spot.trim()} onPress={goOutside} />
+        <Button title={presenceBusy ? 'Speichere…' : 'Ich bin draußen'} disabled={presenceBusy || !spot.trim()} onPress={goOutside} />
         {activeCrewId && cloudConfigured() ? (
           <>
             <Button title="Meinen Eintrag entfernen" tone="dark" disabled={presenceBusy} onPress={clearOutside} />
             {cloudOutside.length ? cloudOutside.map((x) => {
               const minutes = Math.max(1, Math.ceil((new Date(x.expires_at).getTime() - Date.now()) / 60000));
-              return <View key={x.user_id} style={styles.out}><Text style={styles.body}><Text style={styles.bold}>{x.nickname}</Text> Â· {x.spot}</Text><Muted>verfÃ¤llt automatisch in {minutes} min</Muted></View>;
+              return <View key={x.user_id} style={styles.out}><Text style={styles.body}><Text style={styles.bold}>{x.nickname}</Text> · {x.spot}</Text><Muted>verfällt automatisch in {minutes} min</Muted></View>;
             }) : <Muted>Gerade hat niemand einen aktiven Spot eingetragen.</Muted>}
           </>
-        ) : (outside.length ? outside.map((x) => <View key={x.nickname} style={styles.out}><Text style={styles.body}><Text style={styles.bold}>{x.nickname}</Text> Â· {x.spot}</Text><Muted>{x.sport} Â· lokaler Testmodus</Muted></View>) : <Muted>Gerade hat niemand einen Spot eingetragen.</Muted>)}
+        ) : (outside.length ? outside.map((x) => <View key={x.nickname} style={styles.out}><Text style={styles.body}><Text style={styles.bold}>{x.nickname}</Text> · {x.spot}</Text><Muted>{x.sport} · lokaler Testmodus</Muted></View>) : <Muted>Gerade hat niemand einen Spot eingetragen.</Muted>)}
       </Card>
       <Card><Title small>Deine Statistik</Title><View style={styles.stats}>{[['Siege', stats.wins || 0], ['Streak', stats.streak || 0], ['Tricks', stats.tricks || 0], ['Bails', stats.bails || 0], ['Training', `${stats.trainingMinutes || 0} min`]].map(([k, v]) => <View key={k} style={styles.stat}><Text style={styles.num}>{v}</Text><Muted>{k}</Muted></View>)}</View></Card>
       <Card>
         <Title small>Bestenliste</Title>
         {activeCrewId && cloudConfigured() ? (
           <>
-            <Muted>Cloud-Rangliste der ausgewÃ¤hlten Crew Â· sortiert nach Tricks, dann Siegen, dann Trainingszeit.</Muted>
+            <Muted>Cloud-Rangliste der ausgewählten Crew · sortiert nach Tricks, dann Siegen, dann Trainingszeit.</Muted>
             {leaderboardNotice ? <Notice tone="pink">{leaderboardNotice}</Notice> : null}
-            <Button title={leaderboardBusy ? 'Aktualisiereâ€¦' : 'Bestenliste aktualisieren'} tone="dark" disabled={leaderboardBusy} onPress={() => refreshLeaderboard(activeCrewId, true)} />
+            <Button title={leaderboardBusy ? 'Aktualisiere…' : 'Bestenliste aktualisieren'} tone="dark" disabled={leaderboardBusy} onPress={() => refreshLeaderboard(activeCrewId, true)} />
             {cloudLeaderboard.length ? cloudLeaderboard.map((m, i) => {
               const mapped = { tricks: m.tricks, wins: m.wins, streak: m.streak, trainingMinutes: m.training_minutes };
               return <View key={m.user_id} style={styles.rank}>
                 <Text style={styles.place}>{i + 1}</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.bold}>{m.nickname}</Text>
-                  <Muted>{m.tricks || 0} Tricks Â· {m.wins || 0} Siege Â· {m.training_minutes || 0} min Â· Streak {m.streak || 0}</Muted>
+                  <Muted>{m.tricks || 0} Tricks · {m.wins || 0} Siege · {m.training_minutes || 0} min · Streak {m.streak || 0}</Muted>
                 </View>
                 <Text style={styles.badge}>{badge(mapped)}</Text>
               </View>;
@@ -435,14 +435,14 @@ export default function CrewTab({ profile, sport, stats }) {
           </>
         ) : (
           <>
-            <Muted>Lokaler Testmodus, solange keine Cloud-Crew ausgewÃ¤hlt ist.</Muted>
-            {sorted.map(([name, s], i) => <View key={name} style={styles.rank}><Text style={styles.place}>{i + 1}</Text><View style={{ flex: 1 }}><Text style={styles.bold}>{name}</Text><Muted>{s.sport} Â· {s.tricks || 0} Tricks Â· {s.wins || 0} Siege</Muted></View><Text style={styles.badge}>{badge(s)}</Text></View>)}
+            <Muted>Lokaler Testmodus, solange keine Cloud-Crew ausgewählt ist.</Muted>
+            {sorted.map(([name, s], i) => <View key={name} style={styles.rank}><Text style={styles.place}>{i + 1}</Text><View style={{ flex: 1 }}><Text style={styles.bold}>{name}</Text><Muted>{s.sport} · {s.tricks || 0} Tricks · {s.wins || 0} Siege</Muted></View><Text style={styles.badge}>{badge(s)}</Text></View>)}
           </>
         )}
       </Card>
       <Card>
         <Title small>Wochen-Battle</Title>
-        <Muted>Reset montags Â· Woche ab {weekKey()}</Muted>
+        <Muted>Reset montags · Woche ab {weekKey()}</Muted>
         {activeCrewId && cloudConfigured() ? (
           <>
             {weeklyNotice ? <Notice tone="pink">{weeklyNotice}</Notice> : null}
@@ -496,7 +496,7 @@ export default function CrewTab({ profile, sport, stats }) {
         <Title small>Park-Spots teilen</Title>
         {photosNotice ? <Notice tone="pink">{photosNotice}</Notice> : null}
         <Button
-          title={photosBusy ? 'Lädt hoch…' : '📷 Spot-Foto teilen'}
+          title={photosBusy ? 'Lädt hoch…' : 'Spot-Foto teilen'}
           tone="ice"
           disabled={photosBusy}
           onPress={sharePark}
@@ -527,9 +527,9 @@ export default function CrewTab({ profile, sport, stats }) {
           ))
         )}
       </Card>
-      <Card><Title small>KI-WochenrÃ¼ckblick</Title><Button title="RÃ¼ckblick erstellen" tone="dark" onPress={recap} />{review ? <Text style={styles.body}>{review}</Text> : null}</Card>
-      <Card><Title small>ðŸš‘ Notfall-Karte</Title><Notice tone="pink">Bei Verdacht auf Kopf-, Nacken- oder RÃ¼ckenverletzung nicht unnÃ¶tig bewegen. Helm nicht einfach abnehmen. Bewusstlos, aber normale Atmung: stabile Seitenlage, soweit ohne zusÃ¤tzliche GefÃ¤hrdung mÃ¶glich. Nach einem Kopftreffer Session beenden und Beschwerden ernst nehmen.</Notice><View style={styles.row}><Button title="112" tone="pink" onPress={() => openEmergency('112')} /><Button title="116117" tone="ice" onPress={() => openEmergency('116117')} /></View><Field value={contact} onChangeText={setContact} placeholder="PersÃ¶nlicher Notfallkontakt" /><Button title="Kontakt speichern" tone="dark" onPress={saveContact} /></Card>
-      <Card><Title small>ðŸ’¾ Datensicherung</Title><Button title="Alle App-Daten als Text ausgeben" onPress={makeBackup} />{backup ? <Field value={backup} onChangeText={setBackup} multiline placeholder="Backup" /> : null}<Field value={restore} onChangeText={setRestore} multiline placeholder="Sicherung zum ZurÃ¼ckspielen hier einfÃ¼gen" /><Button title="Sicherung zurÃ¼ckspielen" tone="pink" onPress={doRestore} /></Card>
+      <Card><Title small>KI-Wochenrückblick</Title><Button title="Rückblick erstellen" tone="dark" onPress={recap} />{review ? <Text style={styles.body}>{review}</Text> : null}</Card>
+      <Card><Title small>Notfall-Karte</Title><Notice tone="pink">Bei Verdacht auf Kopf-, Nacken- oder Rückenverletzung nicht unnötig bewegen. Helm nicht einfach abnehmen. Bewusstlos, aber normale Atmung: stabile Seitenlage, soweit ohne zusätzliche Gefährdung möglich. Nach einem Kopftreffer Session beenden und Beschwerden ernst nehmen.</Notice><View style={styles.row}><Button title="112" tone="pink" onPress={() => openEmergency('112')} /><Button title="116117" tone="ice" onPress={() => openEmergency('116117')} /></View><Field value={contact} onChangeText={setContact} placeholder="Persönlicher Notfallkontakt" /><Button title="Kontakt speichern" tone="dark" onPress={saveContact} /></Card>
+      <Card><Title small>Datensicherung</Title><Button title="Alle App-Daten als Text ausgeben" onPress={makeBackup} />{backup ? <Field value={backup} onChangeText={setBackup} multiline placeholder="Backup" /> : null}<Field value={restore} onChangeText={setRestore} multiline placeholder="Sicherung zum Zurückspielen hier einfügen" /><Button title="Sicherung zurückspielen" tone="pink" onPress={doRestore} /></Card>
     </View>
   );
 }
