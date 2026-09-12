@@ -351,3 +351,83 @@ export async function deleteMyCrewSpotPhotoCloud(photoId) {
   return { ok: true };
 }
 
+export async function getCrewChatRoomsCloud(crewId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('get_crew_chat_rooms', {
+    p_crew_id: crewId,
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, rooms: data || [], userId: session.user.id };
+}
+
+export async function createCrewChatRoomCloud(crewId, name) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('create_crew_chat_room', {
+    p_crew_id: crewId,
+    p_name: String(name || '').trim(),
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, room: Array.isArray(data) ? data[0] : data, userId: session.user.id };
+}
+
+export async function getCrewChatMessagesCloud(roomId, limit = 100) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('get_crew_chat_messages', {
+    p_room_id: roomId,
+    p_limit: Math.min(200, Math.max(1, Number(limit || 100))),
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  const messages = [...(data || [])].reverse();
+  return { ok: true, messages, userId: session.user.id };
+}
+
+export async function sendCrewChatMessageCloud(roomId, message) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('send_crew_chat_message', {
+    p_room_id: roomId,
+    p_message: String(message || '').trim(),
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, message: Array.isArray(data) ? data[0] : data, userId: session.user.id };
+}
+
+export async function deleteMyChatMessageCloud(messageId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('delete_my_chat_message', {
+    p_message_id: messageId,
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, deleted: Boolean(data), userId: session.user.id };
+}
+
