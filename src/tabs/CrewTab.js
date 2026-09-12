@@ -4,7 +4,7 @@ import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/U
 import { COLORS } from '../theme';
 import { dumpAllData, localGet, localSet, restoreAllData, sharedGet, sharedSet } from '../storage';
 import { weeklyReviewAI } from '../services/ai';
-import { cloudConfigured, createCrewCloud, getMyCrews, joinCrewCloud, syncCloudProfile, setMySpotCloud, clearMySpotCloud, getActiveCrewSpotsCloud, syncMyStatsCloud, getCrewLeaderboardCloud, setMyWeeklyScoreCloud, getWeeklyBattleLeaderboardCloud, getPreviousWeekWinnerCloud, getWeeklyGoalsCloud } from '../services/supabase';
+import { cloudConfigured, createCrewCloud, getMyCrews, joinCrewCloud, syncCloudProfile, setMySpotCloud, clearMySpotCloud, getActiveCrewSpotsCloud, syncMyStatsCloud, getCrewLeaderboardCloud, setMyWeeklyScoreCloud, getWeeklyBattleLeaderboardCloud, getPreviousWeekWinnerCloud, getWeeklyGoalsCloud, uploadCrewSpotPhotoCloud, getCrewSpotPhotosCloud, deleteMyCrewSpotPhotoCloud } from '../services/supabase';
 import { openEmergency } from '../services/maps';
 import { pickAndResizeImage, persistImage } from '../services/media';
 
@@ -32,6 +32,10 @@ export default function CrewTab({ profile, sport, stats }) {
   const [notice, setNotice] = useState('');
   const [review, setReview] = useState('');
   const [sharedSpots, setSharedSpots] = useState([]);
+  const [cloudSpotPhotos, setCloudSpotPhotos] = useState([]);
+  const [photoUserId, setPhotoUserId] = useState(null);
+  const [photosBusy, setPhotosBusy] = useState(false);
+  const [photosNotice, setPhotosNotice] = useState('');
   const [weekly, setWeekly] = useState({ members: {} });
   const [previousWinner, setPreviousWinner] = useState(null);
   const [cloudWeekly, setCloudWeekly] = useState([]);
@@ -139,6 +143,37 @@ export default function CrewTab({ profile, sport, stats }) {
       setGoalsNotice(result.error || 'Wochenziele konnten nicht geladen werden.');
     }
   };
+
+  const refreshSpotPhotos = async (crewId = activeCrewId) => {
+    if (!crewId || !cloudConfigured()) {
+      setCloudSpotPhotos([]);
+      setPhotoUserId(null);
+      setPhotosNotice('');
+      return;
+    }
+
+    const result = await getCrewSpotPhotosCloud(crewId);
+    if (result.ok) {
+      setCloudSpotPhotos(result.photos || []);
+      setPhotoUserId(result.userId || null);
+      setPhotosNotice('');
+    } else {
+      setPhotosNotice(result.error || 'Crew-Fotos konnten nicht geladen werden.');
+    }
+  };
+
+  // SPOT_PHOTOS_CLOUD_EFFECT
+  useEffect(() => {
+    if (!activeCrewId || !cloudConfigured()) {
+      setCloudSpotPhotos([]);
+      setPhotoUserId(null);
+      return;
+    }
+
+    refreshSpotPhotos(activeCrewId);
+    const id = setInterval(() => refreshSpotPhotos(activeCrewId), 30000);
+    return () => clearInterval(id);
+  }, [activeCrewId]);
 
   // WEEKLY_GOALS_CLOUD_EFFECT
   useEffect(() => {
@@ -286,7 +321,51 @@ export default function CrewTab({ profile, sport, stats }) {
   const makeBackup = async () => { setBackup(await dumpAllData()); setNotice('Datensicherung erstellt. Text kopieren und sicher aufheben.'); };
   const doRestore = async () => { try { const n = await restoreAllData(restore); setNotice(`${n} gespeicherte EintrÃ¤ge zurÃ¼ckgespielt. App danach neu starten.`); } catch { setNotice('Sicherung konnte nicht gelesen werden.'); } };
   const recap = async () => { setReview('Erstelle RÃ¼ckblickâ€¦'); try { setReview(await weeklyReviewAI({ ...stats, weeklyScore: weekly.members?.[profile.nickname]?.score || 0 }, sport)); } catch (e) { setReview(e.message); } };
-  const sharePark = async () => { const img = await pickAndResizeImage(); if (!img) return; const uri = await persistImage(img.uri, 'crew-spot'); const next = [{ id: Date.now(), uri, by: profile.nickname, sport: sport.name }, ...sharedSpots].slice(0, 12); setSharedSpots(next); await sharedSet('crew:parkspots', next); };
+  const sharePark = async () => {
+    const img = await pickAndResizeImage();
+    if (!img) return;
+
+    if (activeCrewId && cloudConfigured()) {
+      setPhotosBusy(true);
+      setPhotosNotice('');
+      const result = await uploadCrewSpotPhotoCloud(activeCrewId, img.uri, sport.name);
+
+      if (result.ok) {
+        await refreshSpotPhotos(activeCrewId);
+      } else {
+        setPhotosNotice(result.error || 'Foto konnte nicht hochgeladen werden.');
+      }
+
+      setPhotosBusy(false);
+      return;
+    }
+
+    const uri = await persistImage(img.uri, 'crew-spot');
+    const next = [
+      { id: Date.now(), uri, by: profile.nickname, sport: sport.name },
+      ...sharedSpots,
+    ].slice(0, 12);
+
+    setSharedSpots(next);
+    await sharedSet('crew:parkspots', next);
+  };
+
+  const deleteCloudSpotPhoto = async (photoId) => {
+    if (!activeCrewId || !cloudConfigured()) return;
+
+    setPhotosBusy(true);
+    setPhotosNotice('');
+
+    const result = await deleteMyCrewSpotPhotoCloud(photoId);
+    if (result.ok) {
+      await refreshSpotPhotos(activeCrewId);
+    } else {
+      setPhotosNotice(result.error || 'Foto konnte nicht geloescht werden.');
+    }
+
+    setPhotosBusy(false);
+  };
+
   const badge = (s) => { if ((s.tricks || 0) >= 50) return 'PROGRESS 50'; if ((s.trainingMinutes || 0) >= 300) return '5H SESSION'; if ((s.streak || 0) >= 7) return '7 DAY'; if ((s.wins || 0) >= 3) return 'BATTLE'; return 'RIDER'; };
 
   return (
@@ -309,7 +388,7 @@ export default function CrewTab({ profile, sport, stats }) {
         <Button title="Crew beitreten" tone="dark" disabled={cloudBusy || !joinCode.trim()} onPress={joinCrew} />
       </Card>
 
-      <Notice>Live-Spots und Bestenliste laufen jetzt Ã¼ber die echte Crew-Cloud. Wochen-Battle, Ziele und Spot-Fotos ziehen wir als NÃ¤chstes um.</Notice>
+      <Notice>Live-Spots, Bestenliste, Wochen-Battle, Ziele und Spot-Fotos laufen jetzt über die echte Crew-Cloud.</Notice>
 
       <Card>
         <Title color={sport.color}>Wer ist gerade drauÃŸen?</Title>
@@ -413,7 +492,41 @@ export default function CrewTab({ profile, sport, stats }) {
           </>
         )}
       </Card>
-      <Card><Title small>Park-Spots teilen</Title><Button title="ðŸ“· Spot-Foto teilen" tone="ice" onPress={sharePark} />{sharedSpots.map((x) => <View key={x.id} style={styles.photoWrap}><Image source={{ uri: x.uri }} style={styles.photo} /><Muted>{x.by} Â· {x.sport}</Muted></View>)}</Card>
+      <Card>
+        <Title small>Park-Spots teilen</Title>
+        {photosNotice ? <Notice tone="pink">{photosNotice}</Notice> : null}
+        <Button
+          title={photosBusy ? 'Lädt hoch…' : '📷 Spot-Foto teilen'}
+          tone="ice"
+          disabled={photosBusy}
+          onPress={sharePark}
+        />
+        {activeCrewId && cloudConfigured() ? (
+          cloudSpotPhotos.length ? cloudSpotPhotos.map((x) => (
+            <View key={x.id} style={styles.photoWrap}>
+              {x.url
+                ? <Image source={{ uri: x.url }} style={styles.photo} />
+                : <Muted>Foto konnte nicht geladen werden.</Muted>}
+              <Muted>{x.nickname} · {x.sport_name}</Muted>
+              {x.user_id === photoUserId ? (
+                <Button
+                  title="Mein Foto löschen"
+                  tone="dark"
+                  disabled={photosBusy}
+                  onPress={() => deleteCloudSpotPhoto(x.id)}
+                />
+              ) : null}
+            </View>
+          )) : <Muted>Noch keine Crew-Fotos in dieser Crew.</Muted>
+        ) : (
+          sharedSpots.map((x) => (
+            <View key={x.id} style={styles.photoWrap}>
+              <Image source={{ uri: x.uri }} style={styles.photo} />
+              <Muted>{x.by} · {x.sport}</Muted>
+            </View>
+          ))
+        )}
+      </Card>
       <Card><Title small>KI-WochenrÃ¼ckblick</Title><Button title="RÃ¼ckblick erstellen" tone="dark" onPress={recap} />{review ? <Text style={styles.body}>{review}</Text> : null}</Card>
       <Card><Title small>ðŸš‘ Notfall-Karte</Title><Notice tone="pink">Bei Verdacht auf Kopf-, Nacken- oder RÃ¼ckenverletzung nicht unnÃ¶tig bewegen. Helm nicht einfach abnehmen. Bewusstlos, aber normale Atmung: stabile Seitenlage, soweit ohne zusÃ¤tzliche GefÃ¤hrdung mÃ¶glich. Nach einem Kopftreffer Session beenden und Beschwerden ernst nehmen.</Notice><View style={styles.row}><Button title="112" tone="pink" onPress={() => openEmergency('112')} /><Button title="116117" tone="ice" onPress={() => openEmergency('116117')} /></View><Field value={contact} onChangeText={setContact} placeholder="PersÃ¶nlicher Notfallkontakt" /><Button title="Kontakt speichern" tone="dark" onPress={saveContact} /></Card>
       <Card><Title small>ðŸ’¾ Datensicherung</Title><Button title="Alle App-Daten als Text ausgeben" onPress={makeBackup} />{backup ? <Field value={backup} onChangeText={setBackup} multiline placeholder="Backup" /> : null}<Field value={restore} onChangeText={setRestore} multiline placeholder="Sicherung zum ZurÃ¼ckspielen hier einfÃ¼gen" /><Button title="Sicherung zurÃ¼ckspielen" tone="pink" onPress={doRestore} /></Card>

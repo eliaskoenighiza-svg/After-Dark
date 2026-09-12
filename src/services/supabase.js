@@ -1,5 +1,6 @@
 ﻿import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { File } from 'expo-file-system';
 import { createClient } from '@supabase/supabase-js';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
@@ -244,3 +245,109 @@ export async function getWeeklyGoalsCloud(crewId) {
   if (error) return { ok: false, error: error.message };
   return { ok: true, goals: data || [], userId: session.user.id };
 }
+
+export async function uploadCrewSpotPhotoCloud(crewId, imageUri, sportName) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  try {
+    const source = new File(imageUri);
+    const body = await source.arrayBuffer();
+    const objectPath =
+      `${crewId}/${session.user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 9)}.jpg`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('crew-spot-photos')
+      .upload(objectPath, body, {
+        contentType: 'image/jpeg',
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    if (uploadError) return { ok: false, error: uploadError.message };
+
+    const { data, error } = await supabase.rpc('add_crew_spot_photo', {
+      p_crew_id: crewId,
+      p_object_path: objectPath,
+      p_sport_name: String(sportName || 'Freestyle').trim(),
+    });
+
+    if (error) {
+      await supabase.storage.from('crew-spot-photos').remove([objectPath]);
+      return { ok: false, error: error.message };
+    }
+
+    const photo = Array.isArray(data) ? data[0] : data;
+    const { data: signed } = await supabase.storage
+      .from('crew-spot-photos')
+      .createSignedUrl(objectPath, 3600);
+
+    return {
+      ok: true,
+      photo: { ...photo, url: signed?.signedUrl || null },
+      userId: session.user.id,
+    };
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Foto konnte nicht hochgeladen werden.' };
+  }
+}
+
+export async function getCrewSpotPhotosCloud(crewId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data, error } = await supabase.rpc('get_crew_spot_photos', {
+    p_crew_id: crewId,
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  const photos = await Promise.all(
+    (data || []).map(async (photo) => {
+      const { data: signed, error: signedError } = await supabase.storage
+        .from('crew-spot-photos')
+        .createSignedUrl(photo.object_path, 3600);
+
+      return {
+        ...photo,
+        url: signedError ? null : (signed?.signedUrl || null),
+      };
+    })
+  );
+
+  return { ok: true, photos, userId: session.user.id };
+}
+
+export async function deleteMyCrewSpotPhotoCloud(photoId) {
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: 'Supabase noch nicht eingerichtet.' };
+
+  const session = await ensureCloudSession();
+  if (!session.ok) return session;
+
+  const { data: objectPath, error } = await supabase.rpc('delete_my_crew_spot_photo', {
+    p_photo_id: photoId,
+  });
+
+  if (error) return { ok: false, error: error.message };
+
+  const { error: storageError } = await supabase.storage
+    .from('crew-spot-photos')
+    .remove([objectPath]);
+
+  if (storageError) {
+    return {
+      ok: false,
+      error: 'Foto-Eintrag wurde entfernt, aber die Datei konnte nicht geloescht werden.',
+    };
+  }
+
+  return { ok: true };
+}
+
