@@ -2,6 +2,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Card, Button, Muted, Notice, Title } from '../components/UI';
 import { COLORS } from '../theme';
+import PageHero from '../components/PageHero';
 import { effectiveLevels, effectiveSlots, nextRecommendedSkill } from '../services/skills';
 import { localGet, localSet, sharedGet, sharedSet } from '../storage';
 import { askAI } from '../services/ai';
@@ -285,6 +286,12 @@ export default function SkillsTab({ sport, profile, stats, setStats }) {
 
   return (
     <View style={styles.stack}>
+      <PageHero
+        type="skills"
+        title="Skills"
+        subtitle="SKILL-BAUM · WOCHENZIEL · PLAN"
+        accent={sport.color}
+      />
       {notice ? <Notice>{notice}</Notice> : null}
 
       <Card style={{ borderColor: `${sport.color}55` }}>

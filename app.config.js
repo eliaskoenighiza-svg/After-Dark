@@ -4,7 +4,7 @@ module.exports = {
   expo: {
     name: 'After[Dark',
     slug: 'after-dark',
-    version: '0.6.0',
+    version: '0.7.0',
     orientation: 'portrait',
     userInterfaceStyle: 'dark',
     splash: {

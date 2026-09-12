@@ -1120,7 +1120,7 @@ export default function App() {
 
         {tab !== 'more' ? (
           <>
-            <Card style={styles.focusCard}>
+            <Card style={styles.focusCard} variant="night">
               <View style={styles.focusRow}>
                 <View
                   style={[
