@@ -573,7 +573,7 @@ function MoreTile({ id, label, onPress }) {
   );
 }
 
-function MoreHome({function MoreHome({
+function MoreHome({
   profile,
   setPage,
   connectionProps,
@@ -627,7 +627,11 @@ function MoreHome({function MoreHome({
         <Text style={styles.moreHeroSub}>
           CREW · CHAT · MEMORIES
         </Text>
-        <View style={styles.moreHeroSlash} />
+        <View style={styles.moreHeroSlashWrap}>
+          <View style={styles.moreHeroSlashGlow} />
+          <View style={styles.moreHeroSlashMain} />
+          <View style={styles.moreHeroSlashKick} />
+        </View>
       </View>
 
       <ConnectionCard {...connectionProps} />
@@ -900,12 +904,26 @@ function BottomNav({ tab, onChange, color }) {
             </Text>
 
             {active ? (
-              <View
-                style={[
-                  styles.navLine,
-                  { backgroundColor: color },
-                ]}
-              />
+              <View style={styles.navSwoosh}>
+                <View
+                  style={[
+                    styles.navSwooshGlow,
+                    { backgroundColor: color },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.navSwooshMain,
+                    { backgroundColor: color },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.navSwooshKick,
+                    { backgroundColor: color },
+                  ]}
+                />
+              </View>
             ) : null}
           </Pressable>
         );
@@ -1783,13 +1801,46 @@ const styles = StyleSheet.create({
     letterSpacing: 2.7,
     marginTop: 1,
   },
-  moreHeroSlash: {
-    width: 88,
-    height: 3,
+
+  moreHeroSlashWrap: {
+    width: 116,
+    height: 22,
+    marginTop: 5,
+    position: 'relative',
+  },
+  moreHeroSlashGlow: {
+    position: 'absolute',
+    left: 2,
+    top: 9,
+    width: 104,
+    height: 8,
     borderRadius: 99,
-    backgroundColor: COLORS.ice,
-    marginTop: 8,
-    transform: [{ rotate: '-3deg' }],
+    backgroundColor: '#FF2D8740',
+    transform: [{ rotate: '-5deg' }],
+  },
+  moreHeroSlashMain: {
+    position: 'absolute',
+    left: 0,
+    top: 9,
+    width: 90,
+    height: 4,
+    borderRadius: 99,
+    backgroundColor: COLORS.pink,
+    transform: [{ rotate: '-6deg' }],
+    shadowColor: COLORS.pink,
+    shadowOpacity: 0.9,
+    shadowRadius: 7,
+    elevation: 4,
+  },
+  moreHeroSlashKick: {
+    position: 'absolute',
+    left: 61,
+    top: 11,
+    width: 47,
+    height: 4,
+    borderRadius: 99,
+    backgroundColor: '#B34DFF',
+    transform: [{ rotate: '8deg' }],
   },
   moreTilesRow: {
     flexDirection: 'row',
@@ -2208,14 +2259,22 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   bottomNav: {
-    minHeight: 72,
+    minHeight: 78,
     flexDirection: 'row',
-    backgroundColor: '#060C15',
-    borderTopWidth: 1,
-    borderTopColor: '#1B3044',
+    backgroundColor: '#050B13F5',
+    borderWidth: 1,
+    borderColor: '#193248',
+    borderRadius: 26,
+    marginHorizontal: 8,
+    marginBottom: 6,
     paddingHorizontal: 5,
-    paddingTop: 5,
-    paddingBottom: 7,
+    paddingTop: 7,
+    paddingBottom: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.38,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
   },
   navItem: {
     flex: 1,
@@ -2223,24 +2282,57 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 1,
     position: 'relative',
+    minHeight: 60,
   },
   navIconWrap: {
-    width: 38,
-    height: 30,
-    borderRadius: 12,
+    width: 42,
+    height: 31,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   navLabel: {
-    color: '#F2F5F8',
-    fontSize: 10,
-    fontWeight: '750',
+    color: '#D7DEE8',
+    fontSize: 10.3,
+    fontWeight: '800',
+    marginTop: 1,
   },
-  navLine: {
+
+  navSwoosh: {
     position: 'absolute',
-    bottom: -1,
-    width: 30,
+    bottom: -2,
+    width: 42,
+    height: 12,
+  },
+  navSwooshGlow: {
+    position: 'absolute',
+    left: 1,
+    top: 4,
+    width: 39,
+    height: 7,
+    borderRadius: 99,
+    opacity: 0.18,
+    transform: [{ rotate: '-4deg' }],
+  },
+  navSwooshMain: {
+    position: 'absolute',
+    left: 2,
+    top: 5,
+    width: 32,
     height: 3,
-    borderRadius: 999,
+    borderRadius: 99,
+    shadowColor: '#FFFFFF',
+    shadowOpacity: 0.38,
+    shadowRadius: 4,
+    transform: [{ rotate: '-5deg' }],
+  },
+  navSwooshKick: {
+    position: 'absolute',
+    left: 23,
+    top: 6,
+    width: 16,
+    height: 3,
+    borderRadius: 99,
+    transform: [{ rotate: '7deg' }],
   },
 });

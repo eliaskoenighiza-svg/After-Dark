@@ -24,12 +24,10 @@ export default function AppIcon({
   if (name === 'coach') {
     return (
       <Svg {...common}>
-        <Circle cx="12" cy="12" r="8.2" {...stroke} />
-        <Path d="M8.2 12.3C8.8 9.5 10.1 8 12 8C14.2 8 15.5 9.6 15.8 12.3" {...stroke} />
-        <Path d="M8.2 15.3C9.3 13.9 10.6 13.2 12 13.2C13.4 13.2 14.8 13.9 15.8 15.3" {...stroke} />
-        <Line x1="12" y1="3.8" x2="12" y2="6" {...stroke} />
-        <Line x1="4.4" y1="8.3" x2="6.3" y2="9.4" {...stroke} />
-        <Line x1="17.7" y1="9.4" x2="19.6" y2="8.3" {...stroke} />
+        <Path d="M5 13.5C5 8.4 8 5 12.4 5C16.1 5 18.8 7.3 19.4 10.9" {...stroke} />
+        <Path d="M5.2 13.6H14.1L17.8 11.1" {...stroke} />
+        <Path d="M7 13.6V17.3C8.4 18.5 10.1 19.1 12 19.1C14.2 19.1 16.1 18.3 17.4 16.8" {...stroke} />
+        <Path d="M6.2 9.3C8.3 8.5 10.9 8.2 14.6 8.8" {...stroke} />
       </Svg>
     );
   }
@@ -37,10 +35,11 @@ export default function AppIcon({
   if (name === 'skills') {
     return (
       <Svg {...common}>
-        <Path d="M5 19V13" {...stroke} />
-        <Path d="M12 19V8" {...stroke} />
-        <Path d="M19 19V4" {...stroke} />
         <Path d="M4 20H20" {...stroke} />
+        <Path d="M6 18V13" {...stroke} />
+        <Path d="M11 18V9" {...stroke} />
+        <Path d="M16 18V5" {...stroke} />
+        <Path d="M14 7L16 5L18 7" {...stroke} />
       </Svg>
     );
   }
@@ -48,12 +47,14 @@ export default function AppIcon({
   if (name === 'battle') {
     return (
       <Svg {...common}>
-        <Path d="M5 4L19 18" {...stroke} />
-        <Path d="M19 4L5 18" {...stroke} />
-        <Path d="M4 3L8 4L5 7Z" {...stroke} />
-        <Path d="M20 3L16 4L19 7Z" {...stroke} />
-        <Path d="M4 21L7 18" {...stroke} />
-        <Path d="M20 21L17 18" {...stroke} />
+        <Path d="M5 4L14.7 13.7" {...stroke} />
+        <Path d="M19 4L9.3 13.7" {...stroke} />
+        <Path d="M4.2 3.2L7.4 4L5 6.4Z" {...stroke} />
+        <Path d="M19.8 3.2L16.6 4L19 6.4Z" {...stroke} />
+        <Path d="M7.8 12.2L4.3 18.7" {...stroke} />
+        <Path d="M16.2 12.2L19.7 18.7" {...stroke} />
+        <Path d="M3.4 19.6L6.1 18.1" {...stroke} />
+        <Path d="M20.6 19.6L17.9 18.1" {...stroke} />
       </Svg>
     );
   }
@@ -61,8 +62,8 @@ export default function AppIcon({
   if (name === 'parks') {
     return (
       <Svg {...common}>
-        <Path d="M12 21S18.5 14.8 18.5 9.6A6.5 6.5 0 1 0 5.5 9.6C5.5 14.8 12 21 12 21Z" {...stroke} />
-        <Circle cx="12" cy="9.5" r="2.2" {...stroke} />
+        <Path d="M12 21C12 21 18.2 15.7 18.2 9.7C18.2 6.2 15.5 3.8 12 3.8C8.5 3.8 5.8 6.2 5.8 9.7C5.8 15.7 12 21 12 21Z" {...stroke} />
+        <Circle cx="12" cy="9.6" r="2.2" {...stroke} />
       </Svg>
     );
   }
@@ -70,9 +71,9 @@ export default function AppIcon({
   if (name === 'more') {
     return (
       <Svg {...common}>
-        <Circle cx="5" cy="12" r="1.6" fill={color} />
-        <Circle cx="12" cy="12" r="1.6" fill={color} />
-        <Circle cx="19" cy="12" r="1.6" fill={color} />
+        <Circle cx="5" cy="12" r="1.8" fill={color} />
+        <Circle cx="12" cy="12" r="1.8" fill={color} />
+        <Circle cx="19" cy="12" r="1.8" fill={color} />
       </Svg>
     );
   }
