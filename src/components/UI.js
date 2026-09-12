@@ -10,7 +10,9 @@ export function Title({ children, color = COLORS.text, small = false }) {
   return (
     <View style={styles.titleRow}>
       <View style={[styles.titleMarker, { backgroundColor: color }]} />
-      <Text style={[styles.title, small && styles.titleSmall, { color }]}>{children}</Text>
+      <Text style={[styles.title, small && styles.titleSmall, { color }]}>
+        {children}
+      </Text>
     </View>
   );
 }
@@ -19,12 +21,21 @@ export function Muted({ children, style }) {
   return <Text style={[styles.muted, style]}>{children}</Text>;
 }
 
-export function Button({ title, onPress, tone = 'volt', disabled = false, compact = false }) {
+export function Button({
+  title,
+  onPress,
+  tone = 'volt',
+  disabled = false,
+  compact = false,
+}) {
   const bg =
-    tone === 'pink' ? COLORS.pink :
-    tone === 'ice' ? COLORS.ice :
-    tone === 'dark' ? COLORS.panel2 :
-    COLORS.volt;
+    tone === 'pink'
+      ? COLORS.pink
+      : tone === 'ice'
+        ? COLORS.ice
+        : tone === 'dark'
+          ? COLORS.panel2
+          : COLORS.volt;
 
   const border = tone === 'dark' ? COLORS.line : bg;
   const fg = tone === 'dark' ? COLORS.text : COLORS.bg;
@@ -49,7 +60,14 @@ export function Button({ title, onPress, tone = 'volt', disabled = false, compac
   );
 }
 
-export function Field({ value, onChangeText, placeholder, multiline = false, keyboardType, secureTextEntry }) {
+export function Field({
+  value,
+  onChangeText,
+  placeholder,
+  multiline = false,
+  keyboardType,
+  secureTextEntry,
+}) {
   return (
     <TextInput
       value={value}
@@ -70,7 +88,10 @@ export function Pill({ label, active, onPress, color = COLORS.volt }) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.pill,
-        active && { borderColor: color, backgroundColor: `${color}14` },
+        active && {
+          borderColor: color,
+          backgroundColor: `${color}14`,
+        },
         pressed && { opacity: 0.8 },
       ]}
     >
@@ -81,12 +102,22 @@ export function Pill({ label, active, onPress, color = COLORS.volt }) {
 
 export function Notice({ children, tone = 'ice' }) {
   const color =
-    tone === 'pink' ? COLORS.pink :
-    tone === 'volt' ? COLORS.volt :
-    COLORS.ice;
+    tone === 'pink'
+      ? COLORS.pink
+      : tone === 'volt'
+        ? COLORS.volt
+        : COLORS.ice;
 
   return (
-    <View style={[styles.notice, { borderColor: `${color}55`, backgroundColor: `${color}0C` }]}>
+    <View
+      style={[
+        styles.notice,
+        {
+          borderColor: `${color}55`,
+          backgroundColor: `${color}0C`,
+        },
+      ]}
+    >
       <View style={[styles.noticeBar, { backgroundColor: color }]} />
       <Text style={styles.noticeText}>{children}</Text>
     </View>
@@ -95,9 +126,19 @@ export function Notice({ children, tone = 'ice' }) {
 
 export function StatBadge({ label, value, color = COLORS.volt }) {
   return (
-    <View style={[styles.statBadge, { borderColor: `${color}3A`, backgroundColor: `${color}10` }]}>
+    <View
+      style={[
+        styles.statBadge,
+        {
+          borderColor: `${color}3A`,
+          backgroundColor: `${color}10`,
+        },
+      ]}
+    >
       <Text style={styles.statValue}>{value}</Text>
-      <Text style={[styles.statLabel, { color }]}>{label.toUpperCase()}</Text>
+      <Text style={[styles.statLabel, { color }]}>
+        {label.toUpperCase()}
+      </Text>
     </View>
   );
 }
@@ -109,70 +150,69 @@ export function SectionCode({ children }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.panel,
-    borderRadius: 28,
-    padding: 16,
+    borderRadius: 24,
+    padding: 15,
     borderWidth: 1,
     borderColor: COLORS.lineSoft,
-    gap: 11,
+    gap: 10,
     ...shadow,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 9,
   },
   titleMarker: {
     width: 4,
-    height: 19,
+    height: 18,
     borderRadius: 999,
   },
   title: {
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: '900',
     fontStyle: 'italic',
     letterSpacing: -0.2,
   },
   titleSmall: {
-    fontSize: 17,
+    fontSize: 16.5,
   },
   muted: {
     color: COLORS.muted,
-    fontSize: 13.5,
+    fontSize: 13.3,
     lineHeight: 19,
   },
   button: {
-    minHeight: 52,
-    paddingHorizontal: 17,
-    paddingVertical: 13,
-    borderRadius: 18,
+    minHeight: 50,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 17,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonCompact: {
     minHeight: 40,
-    paddingVertical: 9,
-    paddingHorizontal: 13,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 14,
   },
   buttonText: {
     fontSize: 14.5,
     fontWeight: '900',
-    letterSpacing: 0.15,
   },
   input: {
     backgroundColor: COLORS.panel2,
     color: COLORS.text,
     borderWidth: 1,
     borderColor: COLORS.line,
-    borderRadius: 18,
-    paddingHorizontal: 15,
+    borderRadius: 17,
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    minHeight: 52,
-    fontSize: 15.5,
+    minHeight: 50,
+    fontSize: 15,
   },
   inputMulti: {
-    minHeight: 108,
+    minHeight: 105,
     textAlignVertical: 'top',
   },
   pill: {
@@ -180,22 +220,22 @@ const styles = StyleSheet.create({
     borderColor: COLORS.line,
     backgroundColor: COLORS.bgSoft,
     borderRadius: 999,
-    paddingHorizontal: 14,
+    paddingHorizontal: 13,
     paddingVertical: 9,
     minHeight: 40,
     justifyContent: 'center',
   },
   pillText: {
     color: COLORS.muted,
-    fontWeight: '850',
+    fontWeight: '800',
     fontSize: 13.5,
   },
   notice: {
     borderWidth: 1,
-    borderRadius: 18,
-    padding: 12,
+    borderRadius: 17,
+    padding: 11,
     flexDirection: 'row',
-    gap: 10,
+    gap: 9,
     alignItems: 'flex-start',
   },
   noticeBar: {
@@ -211,26 +251,26 @@ const styles = StyleSheet.create({
   statBadge: {
     flexGrow: 1,
     minWidth: 72,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 18,
+    paddingVertical: 9,
+    paddingHorizontal: 11,
+    borderRadius: 17,
     borderWidth: 1,
   },
   statValue: {
     color: COLORS.text,
-    fontSize: 19,
+    fontSize: 18.5,
     fontWeight: '900',
   },
   statLabel: {
     fontSize: 10.5,
     fontWeight: '900',
-    letterSpacing: 0.55,
+    letterSpacing: 0.5,
     marginTop: 2,
   },
   sectionCode: {
     color: COLORS.muted,
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1.4,
+    letterSpacing: 1.3,
   },
 });

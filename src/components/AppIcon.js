@@ -25,11 +25,11 @@ export default function AppIcon({
     return (
       <Svg {...common}>
         <Circle cx="12" cy="12" r="8.2" {...stroke} />
-        <Circle cx="12" cy="12" r="3.1" {...stroke} />
-        <Line x1="12" y1="2.2" x2="12" y2="6" {...stroke} />
-        <Line x1="12" y1="18" x2="12" y2="21.8" {...stroke} />
-        <Line x1="2.2" y1="12" x2="6" y2="12" {...stroke} />
-        <Line x1="18" y1="12" x2="21.8" y2="12" {...stroke} />
+        <Path d="M8.2 12.3C8.8 9.5 10.1 8 12 8C14.2 8 15.5 9.6 15.8 12.3" {...stroke} />
+        <Path d="M8.2 15.3C9.3 13.9 10.6 13.2 12 13.2C13.4 13.2 14.8 13.9 15.8 15.3" {...stroke} />
+        <Line x1="12" y1="3.8" x2="12" y2="6" {...stroke} />
+        <Line x1="4.4" y1="8.3" x2="6.3" y2="9.4" {...stroke} />
+        <Line x1="17.7" y1="9.4" x2="19.6" y2="8.3" {...stroke} />
       </Svg>
     );
   }
@@ -41,7 +41,6 @@ export default function AppIcon({
         <Path d="M12 19V8" {...stroke} />
         <Path d="M19 19V4" {...stroke} />
         <Path d="M4 20H20" {...stroke} />
-        <Path d="M5 10L10 6L14 9L20 3" {...stroke} />
       </Svg>
     );
   }
@@ -71,9 +70,9 @@ export default function AppIcon({
   if (name === 'more') {
     return (
       <Svg {...common}>
-        <Circle cx="5" cy="12" r="1.5" fill={color} />
-        <Circle cx="12" cy="12" r="1.5" fill={color} />
-        <Circle cx="19" cy="12" r="1.5" fill={color} />
+        <Circle cx="5" cy="12" r="1.6" fill={color} />
+        <Circle cx="12" cy="12" r="1.6" fill={color} />
+        <Circle cx="19" cy="12" r="1.6" fill={color} />
       </Svg>
     );
   }
@@ -81,10 +80,10 @@ export default function AppIcon({
   if (name === 'crew') {
     return (
       <Svg {...common}>
-        <Circle cx="9" cy="8" r="3" {...stroke} />
-        <Circle cx="16.8" cy="9" r="2.4" {...stroke} />
-        <Path d="M3.8 19C4.2 15.6 6 13.6 9 13.6C12 13.6 13.8 15.6 14.2 19" {...stroke} />
-        <Path d="M14 14.5C17.2 13.8 19.6 15.4 20.2 18.3" {...stroke} />
+        <Circle cx="8.5" cy="8" r="3" {...stroke} />
+        <Circle cx="16.4" cy="9.1" r="2.4" {...stroke} />
+        <Path d="M3.4 19C3.9 15.5 5.8 13.4 8.6 13.4C11.5 13.4 13.3 15.5 13.8 19" {...stroke} />
+        <Path d="M13.8 14.5C16.7 13.8 19.2 15.3 20.1 18.4" {...stroke} />
       </Svg>
     );
   }
@@ -127,10 +126,37 @@ export default function AppIcon({
     );
   }
 
+  if (name === 'bell') {
+    return (
+      <Svg {...common}>
+        <Path d="M7 10.5C7 7.4 8.8 5.3 12 5.3C15.2 5.3 17 7.4 17 10.5V14.4L19 17H5L7 14.4Z" {...stroke} />
+        <Path d="M9.7 19C10.2 20.1 11 20.6 12 20.6C13 20.6 13.8 20.1 14.3 19" {...stroke} />
+      </Svg>
+    );
+  }
+
+  if (name === 'plus') {
+    return (
+      <Svg {...common}>
+        <Circle cx="12" cy="12" r="9" {...stroke} />
+        <Line x1="12" y1="7.5" x2="12" y2="16.5" {...stroke} />
+        <Line x1="7.5" y1="12" x2="16.5" y2="12" {...stroke} />
+      </Svg>
+    );
+  }
+
   if (name === 'chevron') {
     return (
       <Svg {...common}>
         <Polyline points="9,5 16,12 9,19" {...stroke} />
+      </Svg>
+    );
+  }
+
+  if (name === 'back') {
+    return (
+      <Svg {...common}>
+        <Polyline points="14.5,5 7.5,12 14.5,19" {...stroke} />
       </Svg>
     );
   }
@@ -143,10 +169,6 @@ export default function AppIcon({
         <Line x1="12" y1="19" x2="12" y2="22" {...stroke} />
         <Line x1="2" y1="12" x2="5" y2="12" {...stroke} />
         <Line x1="19" y1="12" x2="22" y2="12" {...stroke} />
-        <Line x1="4.9" y1="4.9" x2="7" y2="7" {...stroke} />
-        <Line x1="17" y1="17" x2="19.1" y2="19.1" {...stroke} />
-        <Line x1="17" y1="7" x2="19.1" y2="4.9" {...stroke} />
-        <Line x1="4.9" y1="19.1" x2="7" y2="17" {...stroke} />
       </Svg>
     );
   }
@@ -157,8 +179,6 @@ export default function AppIcon({
         <Line x1="12" y1="2" x2="12" y2="22" {...stroke} />
         <Line x1="3.4" y1="7" x2="20.6" y2="17" {...stroke} />
         <Line x1="3.4" y1="17" x2="20.6" y2="7" {...stroke} />
-        <Path d="M9 4.2L12 6L15 4.2" {...stroke} />
-        <Path d="M9 19.8L12 18L15 19.8" {...stroke} />
       </Svg>
     );
   }

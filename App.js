@@ -19,7 +19,12 @@ import { seasonForMonth, SPORT_BY_ID, sportsForSeason } from './src/data/sports'
 import { localGet, localSet } from './src/storage';
 import { pickAndResizeImage, persistImage } from './src/services/media';
 import { checkAIConnection } from './src/services/ai';
-import { checkCloudConnection, cloudConfigured } from './src/services/supabase';
+import {
+  checkCloudConnection,
+  cloudConfigured,
+  getMyCrews,
+  getActiveCrewSpotsCloud,
+} from './src/services/supabase';
 import CoachTab from './src/tabs/CoachTab';
 import BattleTab from './src/tabs/BattleTab';
 import SkillsTab from './src/tabs/SkillsTab';
@@ -36,12 +41,6 @@ const PRIMARY_TABS = [
   ['more', 'more', 'Mehr'],
 ];
 
-const MORE_TABS = [
-  ['crew', 'crew', 'Crew', 'Deine Leute'],
-  ['chat', 'chat', 'Chat', 'Immer in Kontakt'],
-  ['memories', 'memories', 'Memories', 'Deine Highlights'],
-];
-
 const EMPTY_STATS = {
   wins: 0,
   streak: 0,
@@ -52,6 +51,7 @@ const EMPTY_STATS = {
 
 function SeasonChip({ season }) {
   const winter = season === 'winter';
+
   return (
     <View style={styles.seasonChip}>
       <AppIcon
@@ -59,7 +59,9 @@ function SeasonChip({ season }) {
         size={14}
         color={winter ? COLORS.ice : COLORS.warning}
       />
-      <Text style={styles.seasonChipText}>{winter ? 'Winter' : 'Sommer'}</Text>
+      <Text style={styles.seasonChipText}>
+        {winter ? 'Winter' : 'Sommer'}
+      </Text>
     </View>
   );
 }
@@ -104,6 +106,7 @@ function Onboarding({ onDone }) {
     );
 
     const earned = { ...done };
+
     const initialStats = {
       ...EMPTY_STATS,
       tricks: Object.keys(done).length,
@@ -120,33 +123,40 @@ function Onboarding({ onDone }) {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
+
       <ScrollView
         contentContainerStyle={styles.onboard}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.onboardTop}>
           <Logo centered />
-          <Text style={styles.onboardStep}>Einrichtung {step} / 2</Text>
+          <Text style={styles.onboardStep}>
+            Einrichtung {step} / 2
+          </Text>
         </View>
 
         {step === 1 ? (
           <>
             <Card style={styles.welcomeCard}>
-              <Text style={styles.welcomeKicker}>AFTER[DARK]</Text>
-              <Text style={styles.welcomeTitle}>Deine Crew. Deine Tricks.</Text>
+              <Text style={styles.welcomeKicker}>AFTER[DARK</Text>
+              <Text style={styles.welcomeTitle}>
+                Deine Crew. Deine Tricks.
+              </Text>
               <Muted>
-                Richte dein Profil ein. Danach passt sich After[Dark] an deinen
-                Sport und deinen aktuellen Stand an.
+                Richte dein Profil ein. Danach passt sich After[Dark
+                an deinen Sport und deinen aktuellen Stand an.
               </Muted>
             </Card>
 
             <Card>
               <Title>Profil</Title>
+
               <Field
                 value={nickname}
                 onChangeText={setNickname}
                 placeholder="Spitzname"
               />
+
               <Field
                 value={home}
                 onChangeText={setHome}
@@ -154,6 +164,7 @@ function Onboarding({ onDone }) {
               />
 
               <Title small>Saison</Title>
+
               <View style={styles.row}>
                 <Pressable
                   onPress={() => setSeason('summer')}
@@ -165,14 +176,13 @@ function Onboarding({ onDone }) {
                   <AppIcon
                     name="sun"
                     size={18}
-                    color={season === 'summer' ? COLORS.volt : COLORS.muted}
+                    color={
+                      season === 'summer'
+                        ? COLORS.volt
+                        : COLORS.muted
+                    }
                   />
-                  <Text style={[
-                    styles.seasonChoiceText,
-                    season === 'summer' && { color: COLORS.volt },
-                  ]}>
-                    Sommer
-                  </Text>
+                  <Text style={styles.seasonChoiceText}>Sommer</Text>
                 </Pressable>
 
                 <Pressable
@@ -185,18 +195,18 @@ function Onboarding({ onDone }) {
                   <AppIcon
                     name="snow"
                     size={18}
-                    color={season === 'winter' ? COLORS.ice : COLORS.muted}
+                    color={
+                      season === 'winter'
+                        ? COLORS.ice
+                        : COLORS.muted
+                    }
                   />
-                  <Text style={[
-                    styles.seasonChoiceText,
-                    season === 'winter' && { color: COLORS.ice },
-                  ]}>
-                    Winter
-                  </Text>
+                  <Text style={styles.seasonChoiceText}>Winter</Text>
                 </Pressable>
               </View>
 
               <Title small>Sportart</Title>
+
               <View style={styles.choiceGrid}>
                 {options.map((s) => (
                   <Pressable
@@ -232,7 +242,10 @@ function Onboarding({ onDone }) {
           </>
         ) : (
           <Card>
-            <Title color={sport.color}>Was kannst du schon?</Title>
+            <Title color={sport.color}>
+              Was kannst du schon?
+            </Title>
+
             <Muted>
               Hake alles an, was du sicher kannst. Damit startet dein
               Skill-Baum direkt an der richtigen Stelle.
@@ -240,7 +253,12 @@ function Onboarding({ onDone }) {
 
             {sport.levels.map(([level, names]) => (
               <View key={level} style={styles.assessLevel}>
-                <Text style={[styles.assessLevelTitle, { color: sport.color }]}>
+                <Text
+                  style={[
+                    styles.assessLevelTitle,
+                    { color: sport.color },
+                  ]}
+                >
                   {level}
                 </Text>
 
@@ -277,7 +295,7 @@ function Onboarding({ onDone }) {
                 onPress={() => setStep(1)}
               />
               <Button
-                title="After[Dark] starten"
+                title="After[Dark starten"
                 onPress={finish}
               />
             </View>
@@ -302,30 +320,37 @@ function ConnectionCard({
   const cloudOnline = cloudStatus.state === 'online';
 
   return (
-    <Card style={styles.connectionCard}>
-      <Pressable onPress={onToggle} style={styles.connectionHeader}>
+    <View style={styles.connectionCard}>
+      <Pressable
+        onPress={onToggle}
+        style={styles.connectionHeader}
+      >
         <View style={styles.connectionIcon}>
           <AppIcon
             name="cloud"
             size={25}
-            color={cloudOnline ? COLORS.ice : COLORS.muted}
+            color={COLORS.ice}
           />
         </View>
 
         <View style={styles.connectionText}>
-          <Text style={styles.connectionTitle}>Verbindungen</Text>
+          <Text style={styles.connectionTitle}>
+            Verbindungen
+          </Text>
           <Text style={styles.connectionSub}>
-            KI {aiOnline ? 'online' : 'offline'} · Cloud {cloudOnline ? 'online' : 'offline'}
+            KI {aiOnline ? 'online' : 'offline'}
+            {'  ·  '}
+            Cloud {cloudOnline ? 'online' : 'offline'}
           </Text>
         </View>
 
-        <View style={styles.openChip}>
-          <Text style={styles.connectionToggle}>
+        <View style={styles.openButton}>
+          <Text style={styles.openButtonText}>
             {open ? 'Schließen' : 'Öffnen'}
           </Text>
           <AppIcon
             name="chevron"
-            size={16}
+            size={15}
             color={COLORS.ice}
           />
         </View>
@@ -337,17 +362,23 @@ function ConnectionCard({
             <View
               style={[
                 styles.statusDot,
-                { backgroundColor: aiOnline ? COLORS.success : COLORS.pink },
+                {
+                  backgroundColor: aiOnline
+                    ? COLORS.success
+                    : COLORS.pink,
+                },
               ]}
             />
+
             <View style={{ flex: 1 }}>
               <Text style={styles.statusName}>Claude KI</Text>
               <Muted>
                 {aiOnline
                   ? `Verbunden${aiStatus.model ? ` · ${aiStatus.model}` : ''}`
-                  : 'Noch über lokalen PC-Proxy. Später kommt die Handy-Cloud-Funktion.'}
+                  : 'Noch über lokalen PC-Proxy.'}
               </Muted>
             </View>
+
             <Button
               title={aiBusy ? '…' : 'Prüfen'}
               compact
@@ -361,19 +392,27 @@ function ConnectionCard({
             <View
               style={[
                 styles.statusDot,
-                { backgroundColor: cloudOnline ? COLORS.success : COLORS.warning },
+                {
+                  backgroundColor: cloudOnline
+                    ? COLORS.success
+                    : COLORS.warning,
+                },
               ]}
             />
+
             <View style={{ flex: 1 }}>
-              <Text style={styles.statusName}>Supabase Crew-Cloud</Text>
+              <Text style={styles.statusName}>
+                Supabase Crew-Cloud
+              </Text>
               <Muted>
                 {cloudOnline
                   ? 'Anonyme Anmeldung funktioniert.'
                   : cloudConfigured()
                     ? (cloudStatus.error || 'Noch nicht verbunden.')
-                    : 'Bereit für Project URL und Publishable Key.'}
+                    : 'Supabase-Zugangsdaten fehlen.'}
               </Muted>
             </View>
+
             <Button
               title={cloudBusy ? '…' : 'Prüfen'}
               compact
@@ -384,69 +423,351 @@ function ConnectionCard({
           </View>
         </View>
       ) : null}
-    </Card>
+    </View>
   );
 }
 
-function MoreHub({ page, setPage, common }) {
+const TILE_ASSETS = {
+  crew: require('./assets/more-crew.png'),
+  chat: require('./assets/more-chat.png'),
+  memories: require('./assets/more-memories.png'),
+};
+
+const TILE_ICONS = {
+  crew: 'crew',
+  chat: 'chat',
+  memories: 'memories',
+};
+
+const TILE_SUBS = {
+  crew: 'Deine Leute',
+  chat: 'Immer in Kontakt',
+  memories: 'Deine Highlights',
+};
+
+function MoreTile({ id, label, onPress }) {
   return (
-    <View style={styles.stack}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.moreTile,
+        pressed && { transform: [{ scale: 0.985 }] },
+      ]}
+    >
+      <ImageBackground
+        source={TILE_ASSETS[id]}
+        resizeMode="cover"
+        style={styles.moreTileImage}
+        imageStyle={styles.moreTileImageRadius}
+      >
+        <View style={styles.moreTileShade} />
+
+        <View style={styles.moreTileIcon}>
+          <AppIcon
+            name={TILE_ICONS[id]}
+            size={27}
+            color={COLORS.ice}
+          />
+        </View>
+
+        <View style={styles.moreTileBottom}>
+          <Text style={styles.moreTileLabel}>{label}</Text>
+          <Text style={styles.moreTileSub}>{TILE_SUBS[id]}</Text>
+        </View>
+
+        <View style={styles.moreTileArrow}>
+          <AppIcon
+            name="chevron"
+            size={17}
+            color="#FFFFFF"
+          />
+        </View>
+      </ImageBackground>
+    </Pressable>
+  );
+}
+
+function MoreHome({
+  profile,
+  setPage,
+  connectionProps,
+}) {
+  const [liveCount, setLiveCount] = useState(0);
+
+  useEffect(() => {
+    if (!cloudConfigured()) return;
+
+    let cancelled = false;
+
+    const refresh = async () => {
+      try {
+        const crews = await getMyCrews();
+
+        if (!crews.ok || !(crews.crews || []).length) {
+          if (!cancelled) setLiveCount(0);
+          return;
+        }
+
+        const result = await getActiveCrewSpotsCloud(
+          crews.crews[0].id
+        );
+
+        if (!cancelled && result.ok) {
+          setLiveCount((result.spots || []).length);
+        }
+      } catch {
+        if (!cancelled) setLiveCount(0);
+      }
+    };
+
+    refresh();
+    const timer = setInterval(refresh, 10000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  const liveText =
+    liveCount === 1
+      ? '1 Rider draußen'
+      : `${liveCount} Rider draußen`;
+
+  return (
+    <View style={styles.moreHome}>
       <View style={styles.moreHero}>
         <Text style={styles.moreHeroTitle}>Mehr</Text>
-        <Text style={styles.moreHeroSub}>CREW · CHAT · MEMORIES</Text>
-        <View style={styles.moreHeroLine} />
+        <Text style={styles.moreHeroSub}>
+          CREW · CHAT · MEMORIES
+        </Text>
+        <View style={styles.moreHeroSlash} />
       </View>
 
-      <View style={styles.moreGrid}>
-        {MORE_TABS.map(([id, icon, label, sub]) => {
-          const active = page === id;
+      <ConnectionCard {...connectionProps} />
 
-          return (
-            <Pressable
-              key={id}
-              onPress={() => setPage(id)}
-              style={[
-                styles.moreTile,
-                active && {
-                  borderColor: `${common.sport.color}88`,
-                  backgroundColor: `${common.sport.color}10`,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.moreIconBubble,
-                  active && { backgroundColor: `${common.sport.color}18` },
-                ]}
-              >
+      <View style={styles.moreTilesRow}>
+        <MoreTile
+          id="crew"
+          label="Crew"
+          onPress={() => setPage('crew')}
+        />
+        <MoreTile
+          id="chat"
+          label="Chat"
+          onPress={() => setPage('chat')}
+        />
+        <MoreTile
+          id="memories"
+          label="Memories"
+          onPress={() => setPage('memories')}
+        />
+      </View>
+
+      <View style={styles.crewCloudCard}>
+        <View style={styles.crewCloudGlow} />
+        <View style={styles.crewCloudSceneOne} />
+        <View style={styles.crewCloudSceneTwo} />
+
+        <View style={styles.crewCloudTop}>
+          <View style={styles.crewCloudIcon}>
+            <AppIcon
+              name="cloud"
+              size={27}
+              color={COLORS.ice}
+            />
+          </View>
+
+          <Text style={styles.crewCloudTitle}>
+            Crew-Cloud
+          </Text>
+
+          <View style={styles.newBadge}>
+            <Text style={styles.newBadgeText}>NEU</Text>
+          </View>
+        </View>
+
+        <Text style={styles.crewCloudText}>
+          Die neue Crew-Basis. Erstelle eine Crew, lade deine
+          Freunde ein und tretet mit einem eigenen Code bei.
+          Eure Spots, Bestenlisten, Wochen-Battles, Ziele und
+          Fotos – alles an einem Ort.
+        </Text>
+
+        <Pressable
+          onPress={() => setPage('crew')}
+          style={({ pressed }) => [
+            styles.crewPrimaryButton,
+            pressed && { opacity: 0.86 },
+          ]}
+        >
+          <AppIcon
+            name="plus"
+            size={21}
+            color={COLORS.bg}
+            strokeWidth={2.2}
+          />
+          <Text style={styles.crewPrimaryText}>
+            Crew erstellen
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => setPage('crew')}
+          style={({ pressed }) => [
+            styles.crewSecondaryButton,
+            pressed && { opacity: 0.82 },
+          ]}
+        >
+          <AppIcon
+            name="crew"
+            size={20}
+            color="#FFFFFF"
+          />
+          <Text style={styles.crewSecondaryText}>
+            Mit Code beitreten
+          </Text>
+        </Pressable>
+      </View>
+
+      <Pressable
+        onPress={() => setPage('crew')}
+        style={({ pressed }) => [
+          styles.liveCard,
+          pressed && { opacity: 0.86 },
+        ]}
+      >
+        <View style={styles.liveIcon}>
+          <AppIcon
+            name="crew"
+            size={29}
+            color={COLORS.ice}
+          />
+        </View>
+
+        <View style={styles.liveContent}>
+          <View style={styles.liveHeaderRow}>
+            <Text style={styles.liveTitle}>
+              Wer ist gerade draußen?
+            </Text>
+            <AppIcon
+              name="chevron"
+              size={18}
+              color="#FFFFFF"
+            />
+          </View>
+
+          <Text style={styles.liveSub}>
+            Sieh, welche Rider aus deiner Crew gerade unterwegs sind.
+          </Text>
+
+          <View style={styles.liveBottom}>
+            <View style={styles.avatarStack}>
+              <View style={[styles.liveAvatar, { zIndex: 4 }]}>
+                {profile.avatarUri ? (
+                  <Image
+                    source={{ uri: profile.avatarUri }}
+                    style={styles.liveAvatarImage}
+                  />
+                ) : (
+                  <AppIcon
+                    name="user"
+                    size={18}
+                    color={COLORS.ice}
+                  />
+                )}
+              </View>
+
+              <View style={[
+                styles.liveAvatar,
+                styles.liveAvatarOffset1,
+                { zIndex: 3 },
+              ]}>
                 <AppIcon
-                  name={icon}
-                  size={28}
-                  color={active ? common.sport.color : COLORS.ice}
+                  name="user"
+                  size={17}
+                  color={COLORS.warning}
                 />
               </View>
 
-              <Text
-                style={[
-                  styles.moreLabel,
-                  active && { color: common.sport.color },
-                ]}
-              >
-                {label}
+              <View style={[
+                styles.liveAvatar,
+                styles.liveAvatarOffset2,
+                { zIndex: 2 },
+              ]}>
+                <AppIcon
+                  name="user"
+                  size={17}
+                  color={COLORS.pink}
+                />
+              </View>
+
+              <View style={[
+                styles.liveAvatar,
+                styles.liveAvatarOffset3,
+                { zIndex: 1 },
+              ]}>
+                <AppIcon
+                  name="user"
+                  size={17}
+                  color={COLORS.ice}
+                />
+              </View>
+            </View>
+
+            <View style={styles.liveStatusPill}>
+              <View style={styles.liveGreenDot} />
+              <Text style={styles.liveStatusText}>
+                {liveText}
               </Text>
-              <Text style={styles.moreSub}>{sub}</Text>
+            </View>
+          </View>
+        </View>
+      </Pressable>
+    </View>
+  );
+}
 
-              <View style={styles.moreArrow}>
-                <AppIcon
-                  name="chevron"
-                  size={16}
-                  color={COLORS.muted}
-                />
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+function MoreHub({
+  page,
+  setPage,
+  common,
+  connectionProps,
+}) {
+  if (page === 'home') {
+    return (
+      <MoreHome
+        profile={common.profile}
+        setPage={setPage}
+        connectionProps={connectionProps}
+      />
+    );
+  }
+
+  const title =
+    page === 'crew'
+      ? 'Crew'
+      : page === 'chat'
+        ? 'Chat'
+        : 'Memories';
+
+  return (
+    <View style={styles.moreSubPage}>
+      <Pressable
+        onPress={() => setPage('home')}
+        style={styles.backRow}
+      >
+        <View style={styles.backButton}>
+          <AppIcon
+            name="back"
+            size={18}
+            color={COLORS.ice}
+          />
+        </View>
+        <Text style={styles.backText}>Mehr</Text>
+      </Pressable>
+
+      <Text style={styles.subPageTitle}>{title}</Text>
 
       {page === 'crew' && <CrewTab {...common} />}
       {page === 'chat' && <ChatTab {...common} />}
@@ -467,22 +788,28 @@ function BottomNav({ tab, onChange, color }) {
             onPress={() => onChange(id)}
             style={styles.navItem}
           >
-            <View style={[
-              styles.navIconWrap,
-              active && { backgroundColor: `${color}12` },
-            ]}>
+            <View
+              style={[
+                styles.navIconWrap,
+                active && {
+                  backgroundColor: `${color}10`,
+                },
+              ]}
+            >
               <AppIcon
                 name={icon}
                 size={22}
-                color={active ? color : COLORS.muted}
+                color={active ? color : '#F5F7FB'}
                 strokeWidth={active ? 2.2 : 1.8}
               />
             </View>
 
-            <Text style={[
-              styles.navLabel,
-              active && { color },
-            ]}>
+            <Text
+              style={[
+                styles.navLabel,
+                active && { color },
+              ]}
+            >
               {label}
             </Text>
 
@@ -506,15 +833,17 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [stats, setStatsState] = useState(EMPTY_STATS);
   const [tab, setTab] = useState('coach');
-  const [morePage, setMorePage] = useState('crew');
+  const [morePage, setMorePage] = useState('home');
   const [sportOpen, setSportOpen] = useState(false);
   const [connectionsOpen, setConnectionsOpen] = useState(false);
+
   const [aiBusy, setAiBusy] = useState(false);
   const [aiStatus, setAiStatus] = useState({
     state: 'offline',
     error: '',
     model: '',
   });
+
   const [cloudBusy, setCloudBusy] = useState(false);
   const [cloudStatus, setCloudStatus] = useState({
     state: 'offline',
@@ -526,7 +855,7 @@ export default function App() {
       const [savedProfile, savedStats] = await Promise.all([
         localGet('profile', null),
         localGet('stats', EMPTY_STATS),
-        new Promise((resolve) => setTimeout(resolve, 1200)),
+        new Promise((resolve) => setTimeout(resolve, 1100)),
       ]);
 
       setProfile(savedProfile);
@@ -547,6 +876,7 @@ export default function App() {
 
   const runAICheck = async (open = true) => {
     setAiBusy(true);
+
     if (open) setConnectionsOpen(true);
 
     const result = await checkAIConnection();
@@ -578,6 +908,7 @@ export default function App() {
     }
 
     setCloudBusy(true);
+
     if (open) setConnectionsOpen(true);
 
     const result = await checkCloudConnection(
@@ -586,7 +917,10 @@ export default function App() {
 
     setCloudStatus(
       result.ok
-        ? { state: 'online', error: '' }
+        ? {
+            state: 'online',
+            error: '',
+          }
         : {
             state: 'offline',
             error: result.error || 'Keine Verbindung',
@@ -601,7 +935,10 @@ export default function App() {
     await localSet('stats', next);
   };
 
-  const finishOnboarding = (newProfile, initialStats) => {
+  const finishOnboarding = (
+    newProfile,
+    initialStats
+  ) => {
     setProfile(newProfile);
     setStatsState(initialStats || EMPTY_STATS);
   };
@@ -612,8 +949,15 @@ export default function App() {
     const image = await pickAndResizeImage();
     if (!image) return;
 
-    const avatarUri = await persistImage(image.uri, 'profile');
-    const next = { ...profile, avatarUri };
+    const avatarUri = await persistImage(
+      image.uri,
+      'profile'
+    );
+
+    const next = {
+      ...profile,
+      avatarUri,
+    };
 
     setProfile(next);
     await localSet('profile', next);
@@ -644,12 +988,18 @@ export default function App() {
     SPORT_BY_ID[profile.sportId] ||
     sportsForSeason(profile.season)[0];
 
-  const sportOptions = sportsForSeason(profile.season);
+  const sportOptions = sportsForSeason(
+    profile.season
+  );
 
   const changeSeason = async (season) => {
     let sportId = profile.sportId;
 
-    if (!sportsForSeason(season).some((s) => s.id === sportId)) {
+    if (
+      !sportsForSeason(season).some(
+        (s) => s.id === sportId
+      )
+    ) {
       sportId = sportsForSeason(season)[0].id;
     }
 
@@ -674,11 +1024,32 @@ export default function App() {
     setSportOpen(false);
   };
 
+  const handleTabChange = (nextTab) => {
+    setTab(nextTab);
+
+    if (nextTab === 'more') {
+      setMorePage('home');
+    }
+  };
+
   const common = {
     sport,
     profile,
     stats,
     setStats,
+  };
+
+  const connectionProps = {
+    open: connectionsOpen,
+    onToggle: () => {
+      setConnectionsOpen((value) => !value);
+    },
+    aiStatus,
+    aiBusy,
+    onAICheck: () => runAICheck(true),
+    cloudStatus,
+    cloudBusy,
+    onCloudCheck: () => runCloudCheck(true),
   };
 
   return (
@@ -688,8 +1059,8 @@ export default function App() {
         backgroundColor={COLORS.bg}
       />
 
-      <View style={styles.bgAccentOne} />
-      <View style={styles.bgAccentTwo} />
+      <View style={styles.bgGlowOne} />
+      <View style={styles.bgGlowTwo} />
 
       <ScrollView
         style={styles.scroll}
@@ -700,209 +1071,245 @@ export default function App() {
         <View style={styles.topRow}>
           <Logo compact />
 
-          <Pressable
-            onPress={changeProfilePhoto}
-            style={({ pressed }) => [
-              styles.profileChip,
-              pressed && { opacity: 0.8 },
-            ]}
-          >
-            <View style={styles.avatarWrap}>
-              {profile.avatarUri ? (
-                <Image
-                  source={{ uri: profile.avatarUri }}
-                  style={styles.avatar}
-                />
-              ) : (
-                <AppIcon
-                  name="user"
-                  size={20}
-                  color={COLORS.ice}
-                />
-              )}
-
-              <View style={styles.avatarEdit}>
-                <AppIcon
-                  name="edit"
-                  size={10}
-                  color={COLORS.bg}
-                />
-              </View>
-            </View>
-
-            <Text style={styles.profileName}>
-              @{profile.nickname}
-            </Text>
-          </Pressable>
-        </View>
-
-        <Card style={styles.focusCard}>
-          <View style={styles.focusRow}>
-            <View
-              style={[
-                styles.sportIconCircle,
-                {
-                  borderColor: `${sport.color}55`,
-                  backgroundColor: `${sport.color}0F`,
-                },
-              ]}
-            >
-              <SportIcon id={sport.id} color={sport.color} />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[
-                  styles.focusSport,
-                  { color: sport.color },
-                ]}
-              >
-                {sport.name}
-              </Text>
-
-              <View style={styles.focusMetaRow}>
-                <SeasonChip season={profile.season} />
-                <View style={styles.metaDot} />
-                <Text style={styles.focusMeta}>
-                  Battle {sport.battle}
-                </Text>
-              </View>
+          <View style={styles.topActions}>
+            <View style={styles.bellButton}>
+              <AppIcon
+                name="bell"
+                size={20}
+                color="#FFFFFF"
+              />
+              <View style={styles.bellDot} />
             </View>
 
             <Pressable
-              onPress={() => setSportOpen((value) => !value)}
-              style={styles.changeSportButton}
+              onPress={changeProfilePhoto}
+              style={({ pressed }) => [
+                styles.profileChip,
+                pressed && { opacity: 0.8 },
+              ]}
             >
-              <Text style={styles.changeSportText}>
-                {sportOpen ? 'Fertig' : 'Wechseln'}
+              <View style={styles.avatarWrap}>
+                {profile.avatarUri ? (
+                  <Image
+                    source={{ uri: profile.avatarUri }}
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <AppIcon
+                    name="user"
+                    size={19}
+                    color={COLORS.ice}
+                  />
+                )}
+
+                <View style={styles.avatarEdit}>
+                  <AppIcon
+                    name="edit"
+                    size={9}
+                    color={COLORS.bg}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.profileName}>
+                @{profile.nickname}
               </Text>
             </Pressable>
           </View>
+        </View>
 
-          <View style={styles.statsRow}>
-            <StatBadge
-              label="Tricks"
-              value={stats.tricks || 0}
-              color={sport.color}
-            />
-            <StatBadge
-              label="Siege"
-              value={stats.wins || 0}
-              color={COLORS.pink}
-            />
-            <StatBadge
-              label="Streak"
-              value={stats.streak || 0}
-              color={COLORS.ice}
-            />
-            <StatBadge
-              label="Min"
-              value={stats.trainingMinutes || 0}
-              color={COLORS.volt}
-            />
-          </View>
-
-          {sportOpen ? (
-            <View style={styles.sportChooser}>
-              <View style={styles.row}>
-                <Pressable
-                  onPress={() => changeSeason('summer')}
+        {tab !== 'more' ? (
+          <>
+            <Card style={styles.focusCard}>
+              <View style={styles.focusRow}>
+                <View
                   style={[
-                    styles.seasonChoice,
-                    profile.season === 'summer' && styles.seasonChoiceActive,
+                    styles.sportIconCircle,
+                    {
+                      borderColor: `${sport.color}55`,
+                      backgroundColor: `${sport.color}0F`,
+                    },
                   ]}
                 >
-                  <AppIcon
-                    name="sun"
-                    size={18}
-                    color={
-                      profile.season === 'summer'
-                        ? COLORS.volt
-                        : COLORS.muted
-                    }
+                  <SportIcon
+                    id={sport.id}
+                    color={sport.color}
                   />
-                  <Text style={styles.seasonChoiceText}>Sommer</Text>
-                </Pressable>
+                </View>
 
-                <Pressable
-                  onPress={() => changeSeason('winter')}
-                  style={[
-                    styles.seasonChoice,
-                    profile.season === 'winter' && styles.seasonChoiceActive,
-                  ]}
-                >
-                  <AppIcon
-                    name="snow"
-                    size={18}
-                    color={
-                      profile.season === 'winter'
-                        ? COLORS.ice
-                        : COLORS.muted
-                    }
-                  />
-                  <Text style={styles.seasonChoiceText}>Winter</Text>
-                </Pressable>
-              </View>
-
-              <View style={styles.choiceGrid}>
-                {sportOptions.map((s) => (
-                  <Pressable
-                    key={s.id}
-                    onPress={() => changeSport(s.id)}
+                <View style={{ flex: 1 }}>
+                  <Text
                     style={[
-                      styles.choice,
-                      sport.id === s.id && {
-                        borderColor: s.color,
-                        backgroundColor: `${s.color}12`,
-                      },
+                      styles.focusSport,
+                      { color: sport.color },
                     ]}
                   >
-                    <SportIcon id={s.id} color={s.color} />
-                    <Text
+                    {sport.name}
+                  </Text>
+
+                  <View style={styles.focusMetaRow}>
+                    <SeasonChip season={profile.season} />
+                    <View style={styles.metaDot} />
+                    <Text style={styles.focusMeta}>
+                      Battle {sport.battle}
+                    </Text>
+                  </View>
+                </View>
+
+                <Pressable
+                  onPress={() => {
+                    setSportOpen((value) => !value);
+                  }}
+                  style={styles.changeSportButton}
+                >
+                  <Text style={styles.changeSportText}>
+                    {sportOpen ? 'Fertig' : 'Wechseln'}
+                  </Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.statsRow}>
+                <StatBadge
+                  label="Tricks"
+                  value={stats.tricks || 0}
+                  color={sport.color}
+                />
+                <StatBadge
+                  label="Siege"
+                  value={stats.wins || 0}
+                  color={COLORS.pink}
+                />
+                <StatBadge
+                  label="Streak"
+                  value={stats.streak || 0}
+                  color={COLORS.ice}
+                />
+                <StatBadge
+                  label="Min"
+                  value={stats.trainingMinutes || 0}
+                  color={COLORS.volt}
+                />
+              </View>
+
+              {sportOpen ? (
+                <View style={styles.sportChooser}>
+                  <View style={styles.row}>
+                    <Pressable
+                      onPress={() => {
+                        changeSeason('summer');
+                      }}
                       style={[
-                        styles.choiceText,
-                        sport.id === s.id && { color: s.color },
+                        styles.seasonChoice,
+                        profile.season === 'summer' &&
+                          styles.seasonChoiceActive,
                       ]}
                     >
-                      {s.name}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          ) : null}
-        </Card>
+                      <AppIcon
+                        name="sun"
+                        size={18}
+                        color={
+                          profile.season === 'summer'
+                            ? COLORS.volt
+                            : COLORS.muted
+                        }
+                      />
+                      <Text style={styles.seasonChoiceText}>
+                        Sommer
+                      </Text>
+                    </Pressable>
 
-        <ConnectionCard
-          open={connectionsOpen}
-          onToggle={() => setConnectionsOpen((value) => !value)}
-          aiStatus={aiStatus}
-          aiBusy={aiBusy}
-          onAICheck={() => runAICheck(true)}
-          cloudStatus={cloudStatus}
-          cloudBusy={cloudBusy}
-          onCloudCheck={() => runCloudCheck(true)}
-        />
+                    <Pressable
+                      onPress={() => {
+                        changeSeason('winter');
+                      }}
+                      style={[
+                        styles.seasonChoice,
+                        profile.season === 'winter' &&
+                          styles.seasonChoiceActive,
+                      ]}
+                    >
+                      <AppIcon
+                        name="snow"
+                        size={18}
+                        color={
+                          profile.season === 'winter'
+                            ? COLORS.ice
+                            : COLORS.muted
+                        }
+                      />
+                      <Text style={styles.seasonChoiceText}>
+                        Winter
+                      </Text>
+                    </Pressable>
+                  </View>
 
-        {tab === 'coach' && <CoachTab {...common} />}
-        {tab === 'skills' && <SkillsTab {...common} />}
-        {tab === 'battle' && <BattleTab {...common} />}
-        {tab === 'parks' && <ParksTab {...common} />}
-        {tab === 'more' && (
+                  <View style={styles.choiceGrid}>
+                    {sportOptions.map((s) => (
+                      <Pressable
+                        key={s.id}
+                        onPress={() => {
+                          changeSport(s.id);
+                        }}
+                        style={[
+                          styles.choice,
+                          sport.id === s.id && {
+                            borderColor: s.color,
+                            backgroundColor: `${s.color}12`,
+                          },
+                        ]}
+                      >
+                        <SportIcon
+                          id={s.id}
+                          color={s.color}
+                        />
+                        <Text
+                          style={[
+                            styles.choiceText,
+                            sport.id === s.id && {
+                              color: s.color,
+                            },
+                          ]}
+                        >
+                          {s.name}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+            </Card>
+
+            <ConnectionCard {...connectionProps} />
+
+            {tab === 'coach' && (
+              <CoachTab {...common} />
+            )}
+            {tab === 'skills' && (
+              <SkillsTab {...common} />
+            )}
+            {tab === 'battle' && (
+              <BattleTab {...common} />
+            )}
+            {tab === 'parks' && (
+              <ParksTab {...common} />
+            )}
+          </>
+        ) : (
           <MoreHub
             page={morePage}
             setPage={setMorePage}
             common={common}
+            connectionProps={connectionProps}
           />
         )}
 
-        <View style={{ height: 14 }} />
+        <View style={{ height: 12 }} />
       </ScrollView>
 
       <BottomNav
         tab={tab}
-        onChange={setTab}
-        color={sport.color}
+        onChange={handleTabChange}
+        color={tab === 'more' ? COLORS.ice : sport.color}
       />
     </SafeAreaView>
   );
@@ -918,12 +1325,9 @@ const styles = StyleSheet.create({
   },
   page: {
     paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 8,
-    gap: 13,
-  },
-  stack: {
-    gap: 13,
+    paddingTop: 10,
+    paddingBottom: 7,
+    gap: 12,
   },
   loadingScreen: {
     flex: 1,
@@ -934,38 +1338,37 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  bgAccentOne: {
+  bgGlowOne: {
     position: 'absolute',
-    width: 250,
-    height: 250,
+    top: 70,
+    right: -170,
+    width: 280,
+    height: 280,
     borderRadius: 999,
     backgroundColor: `${COLORS.ice}05`,
-    top: 50,
-    right: -150,
   },
-  bgAccentTwo: {
+  bgGlowTwo: {
     position: 'absolute',
-    width: 220,
-    height: 220,
+    top: 400,
+    left: -190,
+    width: 280,
+    height: 280,
     borderRadius: 999,
     backgroundColor: `${COLORS.pink}04`,
-    top: 310,
-    left: -150,
   },
   onboard: {
     padding: 18,
     gap: 14,
   },
   onboardTop: {
-    gap: 6,
-    marginTop: 12,
+    gap: 7,
+    marginTop: 10,
     marginBottom: 4,
     alignItems: 'center',
   },
   onboardStep: {
     color: COLORS.muted,
     fontWeight: '800',
-    letterSpacing: 0.7,
   },
   welcomeCard: {
     backgroundColor: COLORS.bgSoft,
@@ -974,38 +1377,18 @@ const styles = StyleSheet.create({
     color: COLORS.ice,
     fontSize: 11,
     fontWeight: '900',
-    letterSpacing: 2.1,
+    letterSpacing: 2,
   },
   welcomeTitle: {
     color: COLORS.text,
-    fontSize: 29,
+    fontSize: 28,
     fontWeight: '900',
-    letterSpacing: -0.8,
+    letterSpacing: -0.7,
   },
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  seasonChoice: {
-    minWidth: 118,
-    minHeight: 44,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    backgroundColor: COLORS.bgSoft,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  seasonChoiceActive: {
-    borderColor: COLORS.ice,
-    backgroundColor: `${COLORS.ice}0D`,
-  },
-  seasonChoiceText: {
-    color: COLORS.text,
-    fontWeight: '850',
   },
   choiceGrid: {
     flexDirection: 'row',
@@ -1018,7 +1401,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.line,
     backgroundColor: COLORS.bgSoft,
-    borderRadius: 19,
+    borderRadius: 18,
     padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1041,7 +1424,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderWidth: 1,
     borderColor: COLORS.line,
-    borderRadius: 16,
+    borderRadius: 15,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1058,30 +1441,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topRow: {
-    minHeight: 54,
+    minHeight: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 1,
+  },
+  topActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  bellButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 999,
+    backgroundColor: COLORS.panel,
+    borderWidth: 1,
+    borderColor: COLORS.lineSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  bellDot: {
+    position: 'absolute',
+    right: 8,
+    top: 7,
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+    backgroundColor: COLORS.pink,
   },
   profileChip: {
-    minHeight: 46,
-    maxWidth: 160,
+    minHeight: 42,
+    maxWidth: 145,
     backgroundColor: COLORS.panel,
     borderWidth: 1,
     borderColor: COLORS.lineSoft,
     borderRadius: 999,
-    paddingLeft: 5,
-    paddingRight: 11,
+    paddingLeft: 4,
+    paddingRight: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
   },
   avatarWrap: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: 999,
-    overflow: 'visible',
     backgroundColor: COLORS.panel2,
     borderWidth: 1,
     borderColor: COLORS.line,
@@ -1089,16 +1495,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatar: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     borderRadius: 999,
   },
   avatarEdit: {
     position: 'absolute',
-    right: -3,
+    right: -2,
     bottom: -2,
-    width: 16,
-    height: 16,
+    width: 14,
+    height: 14,
     borderRadius: 999,
     backgroundColor: COLORS.ice,
     alignItems: 'center',
@@ -1106,70 +1512,70 @@ const styles = StyleSheet.create({
   },
   profileName: {
     color: COLORS.text,
-    fontWeight: '850',
+    fontWeight: '800',
     flexShrink: 1,
+    fontSize: 13,
   },
   focusCard: {
     backgroundColor: COLORS.bgSoft,
-    borderColor: COLORS.line,
   },
   focusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 11,
+    gap: 10,
   },
   sportIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 19,
+    width: 54,
+    height: 54,
+    borderRadius: 18,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   focusSport: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '900',
     fontStyle: 'italic',
-    letterSpacing: -0.3,
   },
   focusMetaRow: {
-    marginTop: 5,
+    marginTop: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: 6,
   },
   seasonChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
   },
   seasonChipText: {
     color: COLORS.muted,
-    fontSize: 12.5,
-    fontWeight: '750',
+    fontSize: 12,
+    fontWeight: '700',
   },
   metaDot: {
     width: 3,
     height: 3,
-    borderRadius: 999,
+    borderRadius: 99,
     backgroundColor: COLORS.muted,
   },
   focusMeta: {
     color: COLORS.muted,
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '700',
   },
   changeSportButton: {
     backgroundColor: COLORS.panel2,
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: COLORS.line,
   },
   changeSportText: {
     color: COLORS.ice,
-    fontWeight: '850',
+    fontWeight: '800',
+    fontSize: 12.5,
   },
   statsRow: {
     flexDirection: 'row',
@@ -1179,24 +1585,49 @@ const styles = StyleSheet.create({
   sportChooser: {
     borderTopWidth: 1,
     borderTopColor: COLORS.lineSoft,
-    paddingTop: 13,
-    gap: 11,
+    paddingTop: 12,
+    gap: 10,
+  },
+  seasonChoice: {
+    minWidth: 112,
+    minHeight: 42,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    backgroundColor: COLORS.bgSoft,
+    paddingHorizontal: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  seasonChoiceActive: {
+    borderColor: COLORS.ice,
+    backgroundColor: `${COLORS.ice}0C`,
+  },
+  seasonChoiceText: {
+    color: COLORS.text,
+    fontWeight: '800',
   },
   connectionCard: {
-    padding: 13,
+    backgroundColor: '#0A1524',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#20405D',
+    padding: 11,
+    gap: 10,
   },
   connectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 11,
+    gap: 10,
   },
   connectionIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    backgroundColor: `${COLORS.ice}0A`,
+    width: 48,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: '#0E2033',
     borderWidth: 1,
-    borderColor: `${COLORS.ice}25`,
+    borderColor: '#2A5871',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1204,118 +1635,380 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   connectionTitle: {
-    color: COLORS.text,
+    color: '#FFFFFF',
     fontSize: 16.5,
     fontWeight: '900',
+    fontStyle: 'italic',
   },
   connectionSub: {
     color: COLORS.muted,
-    fontSize: 12.5,
+    fontSize: 12,
     marginTop: 3,
   },
-  openChip: {
+  openButton: {
+    minHeight: 38,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.ice,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 1,
   },
-  connectionToggle: {
+  openButtonText: {
     color: COLORS.ice,
-    fontWeight: '850',
-    fontSize: 13,
+    fontWeight: '800',
+    fontSize: 12.5,
   },
   connectionStack: {
-    gap: 12,
     borderTopWidth: 1,
     borderTopColor: COLORS.lineSoft,
-    paddingTop: 12,
+    paddingTop: 10,
+    gap: 10,
   },
   connectionRow: {
     flexDirection: 'row',
-    gap: 10,
     alignItems: 'center',
+    gap: 9,
   },
   statusDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 999,
+    width: 8,
+    height: 8,
+    borderRadius: 99,
   },
   statusName: {
     color: COLORS.text,
     fontWeight: '900',
   },
+  moreHome: {
+    gap: 12,
+  },
   moreHero: {
-    paddingHorizontal: 3,
-    paddingTop: 4,
+    paddingHorizontal: 2,
+    paddingTop: 7,
     paddingBottom: 2,
   },
   moreHeroTitle: {
-    color: COLORS.text,
-    fontSize: 34,
+    color: '#FFFFFF',
+    fontSize: 43,
+    lineHeight: 47,
     fontWeight: '900',
     fontStyle: 'italic',
-    letterSpacing: -1.2,
+    letterSpacing: -1.8,
   },
   moreHeroSub: {
-    color: COLORS.muted,
-    fontSize: 10.5,
+    color: '#CFD7E4',
+    fontSize: 9.5,
     fontWeight: '900',
-    letterSpacing: 2.3,
-    marginTop: 2,
+    letterSpacing: 2.7,
+    marginTop: 1,
   },
-  moreHeroLine: {
-    width: 72,
+  moreHeroSlash: {
+    width: 88,
     height: 3,
-    borderRadius: 999,
+    borderRadius: 99,
     backgroundColor: COLORS.ice,
-    marginTop: 9,
-    transform: [{ rotate: '-2deg' }],
+    marginTop: 8,
+    transform: [{ rotate: '-3deg' }],
   },
-  moreGrid: {
+  moreTilesRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 7,
   },
   moreTile: {
     flex: 1,
-    minHeight: 126,
-    backgroundColor: COLORS.panel,
+    height: 138,
+    borderRadius: 20,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    borderRadius: 23,
-    padding: 11,
-    justifyContent: 'flex-end',
-    position: 'relative',
+    borderColor: '#28506C',
+    backgroundColor: COLORS.panel,
   },
-  moreIconBubble: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
+  moreTileImage: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    padding: 10,
+  },
+  moreTileImageRadius: {
+    borderRadius: 19,
+  },
+  moreTileShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#02070D66',
+  },
+  moreTileIcon: {
+    position: 'absolute',
+    left: 10,
+    top: 11,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: '#07111BCF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moreTileBottom: {
+    gap: 2,
+  },
+  moreTileLabel: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    fontSize: 14.5,
+  },
+  moreTileSub: {
+    color: COLORS.ice,
+    fontSize: 9.7,
+    fontWeight: '700',
+  },
+  moreTileArrow: {
+    position: 'absolute',
+    right: 6,
+    bottom: 28,
+  },
+  crewCloudCard: {
+    minHeight: 273,
+    backgroundColor: '#0B1725',
+    borderWidth: 1,
+    borderColor: '#254965',
+    borderRadius: 23,
+    padding: 14,
+    gap: 11,
+    overflow: 'hidden',
+  },
+  crewCloudGlow: {
+    position: 'absolute',
+    right: -30,
+    top: -20,
+    width: 160,
+    height: 160,
+    borderRadius: 999,
+    backgroundColor: `${COLORS.ice}08`,
+  },
+  crewCloudSceneOne: {
+    position: 'absolute',
+    right: 18,
+    top: 70,
+    width: 56,
+    height: 96,
+    borderRadius: 40,
+    backgroundColor: '#1B385022',
+    transform: [{ rotate: '-13deg' }],
+  },
+  crewCloudSceneTwo: {
+    position: 'absolute',
+    right: 69,
+    top: 91,
+    width: 38,
+    height: 77,
+    borderRadius: 30,
+    backgroundColor: '#17354B20',
+    transform: [{ rotate: '9deg' }],
+  },
+  crewCloudTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  crewCloudIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     backgroundColor: `${COLORS.ice}0B`,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
   },
-  moreLabel: {
-    color: COLORS.text,
+  crewCloudTitle: {
+    color: '#FFFFFF',
+    fontSize: 20.5,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    flex: 1,
+  },
+  newBadge: {
+    backgroundColor: COLORS.volt,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  newBadgeText: {
+    color: COLORS.bg,
+    fontWeight: '900',
+    fontSize: 10.5,
+  },
+  crewCloudText: {
+    color: '#C9D2DF',
+    lineHeight: 18.5,
+    fontSize: 12.3,
+    paddingRight: 8,
+  },
+  crewPrimaryButton: {
+    minHeight: 49,
+    borderRadius: 999,
+    backgroundColor: COLORS.volt,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  crewPrimaryText: {
+    color: COLORS.bg,
     fontWeight: '900',
     fontSize: 15,
   },
-  moreSub: {
+  crewSecondaryButton: {
+    minHeight: 45,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#31506A',
+    backgroundColor: '#0A1421CC',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  crewSecondaryText: {
+    color: '#D4DCE7',
+    fontWeight: '700',
+    fontSize: 13.5,
+  },
+  liveCard: {
+    backgroundColor: '#0A1523',
+    borderWidth: 1,
+    borderColor: '#23445F',
+    borderRadius: 22,
+    minHeight: 128,
+    padding: 12,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  liveIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    backgroundColor: `${COLORS.ice}0A`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  liveContent: {
+    flex: 1,
+  },
+  liveHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  liveTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
+    flex: 1,
+  },
+  liveSub: {
     color: COLORS.muted,
-    fontWeight: '650',
-    fontSize: 10.5,
+    fontSize: 11.3,
+    lineHeight: 16,
     marginTop: 3,
   },
-  moreArrow: {
+  liveBottom: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  avatarStack: {
+    width: 105,
+    height: 35,
+    position: 'relative',
+  },
+  liveAvatar: {
     position: 'absolute',
-    right: 8,
-    top: 12,
+    left: 0,
+    top: 0,
+    width: 35,
+    height: 35,
+    borderRadius: 999,
+    backgroundColor: COLORS.panel2,
+    borderWidth: 2,
+    borderColor: '#DDE7F1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  liveAvatarOffset1: {
+    left: 24,
+  },
+  liveAvatarOffset2: {
+    left: 48,
+  },
+  liveAvatarOffset3: {
+    left: 72,
+  },
+  liveAvatarImage: {
+    width: 31,
+    height: 31,
+    borderRadius: 999,
+  },
+  liveStatusPill: {
+    minHeight: 34,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#28465B',
+    backgroundColor: '#07111D',
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  liveGreenDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 99,
+    backgroundColor: '#25F13B',
+    shadowColor: '#25F13B',
+    shadowOpacity: 0.9,
+    shadowRadius: 5,
+  },
+  liveStatusText: {
+    color: '#E4EAF2',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  moreSubPage: {
+    gap: 12,
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    alignSelf: 'flex-start',
+  },
+  backButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.line,
+    backgroundColor: COLORS.panel,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backText: {
+    color: COLORS.ice,
+    fontWeight: '800',
+  },
+  subPageTitle: {
+    color: '#FFFFFF',
+    fontSize: 33,
+    fontWeight: '900',
+    fontStyle: 'italic',
+    letterSpacing: -1,
   },
   bottomNav: {
-    minHeight: 74,
+    minHeight: 72,
     flexDirection: 'row',
-    backgroundColor: '#090F1A',
+    backgroundColor: '#060C15',
     borderTopWidth: 1,
-    borderTopColor: COLORS.lineSoft,
+    borderTopColor: '#1B3044',
     paddingHorizontal: 5,
     paddingTop: 5,
     paddingBottom: 7,
@@ -1335,9 +2028,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   navLabel: {
-    color: COLORS.muted,
-    fontSize: 10.5,
-    fontWeight: '800',
+    color: '#F2F5F8',
+    fontSize: 10,
+    fontWeight: '750',
   },
   navLine: {
     position: 'absolute',
