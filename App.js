@@ -426,12 +426,6 @@ function ConnectionCard({
   );
 }
 
-const TILE_ASSETS = {
-  crew: require('./assets/more-crew.png'),
-  chat: require('./assets/more-chat.png'),
-  memories: require('./assets/more-memories.png'),
-};
-
 const TILE_ICONS = {
   crew: 'crew',
   chat: 'chat',
@@ -444,49 +438,142 @@ const TILE_SUBS = {
   memories: 'Deine Highlights',
 };
 
+const TILE_THEME = {
+  crew: {
+    accent: COLORS.ice,
+    accent2: '#1B88A8',
+    background: '#071722',
+    border: '#23516A',
+    code: '01',
+  },
+  chat: {
+    accent: COLORS.pink,
+    accent2: COLORS.purple,
+    background: '#150A17',
+    border: '#54304F',
+    code: '02',
+  },
+  memories: {
+    accent: '#72C9FF',
+    accent2: '#3C7DFF',
+    background: '#081422',
+    border: '#2A4D6C',
+    code: '03',
+  },
+};
+
+function MoreTileArt({ id, theme }) {
+  if (id === 'crew') {
+    return (
+      <View style={styles.tileArt}>
+        <View style={[styles.crewOrbit, { borderColor: `${theme.accent}55` }]} />
+        <View style={[styles.crewDot, styles.crewDotOne, { backgroundColor: theme.accent }]} />
+        <View style={[styles.crewDot, styles.crewDotTwo, { backgroundColor: '#FFFFFF' }]} />
+        <View style={[styles.crewDot, styles.crewDotThree, { backgroundColor: theme.accent2 }]} />
+        <View style={[styles.crewLink, { backgroundColor: `${theme.accent}66` }]} />
+      </View>
+    );
+  }
+
+  if (id === 'chat') {
+    return (
+      <View style={styles.tileArt}>
+        <View style={[styles.chatBubbleBack, { borderColor: `${theme.accent2}66` }]} />
+        <View style={[styles.chatBubbleFront, { borderColor: `${theme.accent}88` }]}>
+          <View style={styles.chatDots}>
+            <View style={[styles.chatDot, { backgroundColor: theme.accent }]} />
+            <View style={[styles.chatDot, { backgroundColor: '#FFFFFF' }]} />
+            <View style={[styles.chatDot, { backgroundColor: theme.accent2 }]} />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.tileArt}>
+      <View style={[styles.memoryFrame, { borderColor: `${theme.accent}88` }]}>
+        <View style={[styles.memoryHorizon, { backgroundColor: `${theme.accent2}66` }]} />
+        <View style={[styles.memorySun, { backgroundColor: theme.accent }]} />
+      </View>
+      <View style={[styles.memoryFlash, { borderColor: theme.accent }]} />
+    </View>
+  );
+}
+
 function MoreTile({ id, label, onPress }) {
+  const theme = TILE_THEME[id];
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.moreTile,
-        pressed && { transform: [{ scale: 0.985 }] },
+        {
+          backgroundColor: theme.background,
+          borderColor: theme.border,
+        },
+        pressed && {
+          transform: [{ scale: 0.985 }],
+          opacity: 0.9,
+        },
       ]}
     >
-      <ImageBackground
-        source={TILE_ASSETS[id]}
-        resizeMode="cover"
-        style={styles.moreTileImage}
-        imageStyle={styles.moreTileImageRadius}
+      <View
+        style={[
+          styles.moreTileGlow,
+          { backgroundColor: `${theme.accent}12` },
+        ]}
+      />
+
+      <View
+        style={[
+          styles.moreTileTopLine,
+          { backgroundColor: theme.accent },
+        ]}
+      />
+
+      <Text style={[styles.moreTileCode, { color: `${theme.accent}99` }]}>
+        {theme.code}
+      </Text>
+
+      <MoreTileArt id={id} theme={theme} />
+
+      <View
+        style={[
+          styles.moreTileIcon,
+          {
+            borderColor: `${theme.accent}44`,
+            backgroundColor: `${theme.accent}0D`,
+          },
+        ]}
       >
-        <View style={styles.moreTileShade} />
+        <AppIcon
+          name={TILE_ICONS[id]}
+          size={25}
+          color={theme.accent}
+        />
+      </View>
 
-        <View style={styles.moreTileIcon}>
-          <AppIcon
-            name={TILE_ICONS[id]}
-            size={27}
-            color={COLORS.ice}
-          />
-        </View>
+      <View style={styles.moreTileBottom}>
+        <Text style={styles.moreTileLabel}>{label}</Text>
+        <Text style={[styles.moreTileSub, { color: theme.accent }]}>
+          {TILE_SUBS[id]}
+        </Text>
+      </View>
 
-        <View style={styles.moreTileBottom}>
-          <Text style={styles.moreTileLabel}>{label}</Text>
-          <Text style={styles.moreTileSub}>{TILE_SUBS[id]}</Text>
-        </View>
-
-        <View style={styles.moreTileArrow}>
-          <AppIcon
-            name="chevron"
-            size={17}
-            color="#FFFFFF"
-          />
-        </View>
-      </ImageBackground>
+      <View style={styles.moreTileArrow}>
+        <AppIcon
+          name="chevron"
+          size={16}
+          color="#FFFFFF"
+        />
+      </View>
     </Pressable>
   );
 }
 
-function MoreHome({
+function MoreHome({function MoreHome({
   profile,
   setPage,
   connectionProps,
@@ -1710,35 +1797,160 @@ const styles = StyleSheet.create({
   },
   moreTile: {
     flex: 1,
-    height: 138,
-    borderRadius: 20,
+    height: 142,
+    borderRadius: 21,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#28506C',
-    backgroundColor: COLORS.panel,
-  },
-  moreTileImage: {
-    flex: 1,
-    justifyContent: 'flex-end',
     padding: 10,
+    justifyContent: 'flex-end',
+    position: 'relative',
   },
-  moreTileImageRadius: {
-    borderRadius: 19,
-  },
-  moreTileShade: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#02070D66',
-  },
-  moreTileIcon: {
+  moreTileGlow: {
     position: 'absolute',
-    left: 10,
+    width: 115,
+    height: 115,
+    borderRadius: 999,
+    right: -52,
+    top: -43,
+  },
+  moreTileTopLine: {
+    position: 'absolute',
+    top: 0,
+    left: 13,
+    width: 36,
+    height: 2,
+    borderRadius: 999,
+  },
+  moreTileCode: {
+    position: 'absolute',
+    right: 8,
+    top: 7,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+  },
+  tileArt: {
+    position: 'absolute',
+    left: 7,
+    right: 7,
+    top: 8,
+    height: 72,
+  },
+  crewOrbit: {
+    position: 'absolute',
+    width: 64,
+    height: 38,
+    borderRadius: 999,
+    borderWidth: 1,
+    left: 17,
+    top: 14,
+    transform: [{ rotate: '-10deg' }],
+  },
+  crewDot: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 999,
+    borderWidth: 2,
+    borderColor: '#071722',
+  },
+  crewDotOne: {
+    left: 20,
+    top: 21,
+  },
+  crewDotTwo: {
+    left: 43,
     top: 11,
-    width: 42,
-    height: 42,
+  },
+  crewDotThree: {
+    left: 63,
+    top: 28,
+  },
+  crewLink: {
+    position: 'absolute',
+    left: 31,
+    top: 37,
+    width: 39,
+    height: 2,
+    borderRadius: 99,
+    transform: [{ rotate: '8deg' }],
+  },
+  chatBubbleBack: {
+    position: 'absolute',
+    width: 58,
+    height: 34,
+    borderRadius: 13,
+    borderWidth: 1,
+    right: 11,
+    top: 10,
+    transform: [{ rotate: '7deg' }],
+  },
+  chatBubbleFront: {
+    position: 'absolute',
+    width: 66,
+    height: 38,
     borderRadius: 14,
-    backgroundColor: '#07111BCF',
+    borderWidth: 1,
+    left: 11,
+    top: 24,
+    backgroundColor: '#120B16CC',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  chatDots: {
+    flexDirection: 'row',
+    gap: 5,
+  },
+  chatDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 99,
+  },
+  memoryFrame: {
+    position: 'absolute',
+    left: 17,
+    top: 11,
+    width: 62,
+    height: 45,
+    borderRadius: 11,
+    borderWidth: 1,
+    overflow: 'hidden',
+    backgroundColor: '#091A29AA',
+  },
+  memoryHorizon: {
+    position: 'absolute',
+    left: -5,
+    right: -5,
+    bottom: 7,
+    height: 18,
+    borderRadius: 99,
+    transform: [{ rotate: '-7deg' }],
+  },
+  memorySun: {
+    position: 'absolute',
+    right: 10,
+    top: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 99,
+  },
+  memoryFlash: {
+    position: 'absolute',
+    right: 7,
+    top: 6,
+    width: 15,
+    height: 15,
+    borderWidth: 1,
+    transform: [{ rotate: '45deg' }],
+  },
+  moreTileIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 13,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   moreTileBottom: {
     gap: 2,
@@ -1749,14 +1961,13 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
   },
   moreTileSub: {
-    color: COLORS.ice,
-    fontSize: 9.7,
-    fontWeight: '700',
+    fontSize: 9.6,
+    fontWeight: '800',
   },
   moreTileArrow: {
     position: 'absolute',
-    right: 6,
-    bottom: 28,
+    right: 5,
+    bottom: 27,
   },
   crewCloudCard: {
     minHeight: 273,
