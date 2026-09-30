@@ -1,0 +1,18 @@
+After[Dark – Parks Map V8
+
+Warum:
+Die Park-Suche funktioniert, aber die Google-Grundkarte bleibt in Expo Go weiß. Das ist ein bekanntes react-native-maps/Google-Maps-Problem und kein Fehler der Park-Suche.
+
+V8:
+- ersetzt nur die Ergebnis-Karte durch eine eingebettete OpenStreetMap/Leaflet-Karte
+- 25+ Treffer werden direkt auf der Karte angezeigt
+- Karte bleibt interaktiv (verschieben/zoomen)
+- Wohnort + Spot-Marker werden angezeigt
+- gespeicherte Spots werden Lime markiert
+- Liste/Karte-Schalter und Wunsch-Obstacles bleiben erhalten
+- kein neuer Cloudflare-Deploy erforderlich
+
+Nach dem Kopieren:
+1. INSTALL_MAP_WEBVIEW.bat ausführen
+2. After[Dark neu starten
+3. Parks öffnen und Karte testen

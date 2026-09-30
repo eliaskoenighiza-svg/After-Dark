@@ -1,0 +1,13 @@
+After[Dark V5 – Park + Wetter Proxy
+
+Warum V5:
+Die Android-App konnte externe Open-Meteo/OSM-Abfragen direkt teilweise mit "fetch failed" abbrechen.
+Cloudflare selbst funktioniert nachweislich. Deshalb laufen jetzt auch Ortsauflösung und Wetter über denselben Worker.
+
+Enthalten:
+- Park-Suche in der App über Cloudflare -> OpenStreetMap
+- Geocoding über Cloudflare -> Open-Meteo
+- Wetter über Cloudflare -> Open-Meteo
+- Memories bis 100 Bilder (aus V4)
+
+Nach dem Kopieren unbedingt DEPLOY_PARK_PROXY.bat ausführen und danach After[Dark neu starten.

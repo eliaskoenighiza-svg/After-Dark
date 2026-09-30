@@ -1,0 +1,15 @@
+After[Dark - Parks V7
+
+Neu:
+- Karte/Liste-Schalter sitzt unten bei den Suchergebnissen.
+- Karte ist deutlich groesser (580 px hoch).
+- Treffer werden automatisch so gezoomt, dass alle Marker sichtbar sind.
+- Wohnort wird als eigener Marker angezeigt.
+- Vor der Suche koennen bis zu 3 Wunsch-Obstacles gewaehlt werden.
+- Treffer mit erkannten Wunsch-Obstacles werden bevorzugt sortiert.
+- Wetter ueber den bestehenden Cloudflare-Worker bleibt erhalten.
+- Memories-Limit bleibt bei 100 Bildern.
+
+Hinweis zu Obstacles:
+OpenStreetMap/Nominatim hat nicht bei jedem Skatepark genaue Obstacle-Daten.
+Die Auswahl ist daher eine Praeferenz und kein harter Filter.

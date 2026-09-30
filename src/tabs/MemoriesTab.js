@@ -19,6 +19,7 @@ import {
 } from '../services/supabase';
 
 const today = () => new Date().toISOString().slice(0, 10);
+const MEMORY_LIMIT = 100;
 
 export default function MemoriesTab({ profile }) {
   const [scope, setScope] = useState('private');
@@ -29,7 +30,7 @@ export default function MemoriesTab({ profile }) {
   const [crewId, setCrewId] = useState(null);
   const [cloudUserId, setCloudUserId] = useState(null);
 
-  const max = scope === 'private' ? 12 : 9;
+  const max = MEMORY_LIMIT;
 
   const loadLocal = async (scopeValue = scope) => {
     const key = scopeValue === 'private'
@@ -96,7 +97,7 @@ export default function MemoriesTab({ profile }) {
     const result = await getMemoriesCloud(
       scopeValue,
       targetCrewId,
-      scopeValue === 'private' ? 12 : 50
+      MEMORY_LIMIT
     );
 
     if (!result.ok) {

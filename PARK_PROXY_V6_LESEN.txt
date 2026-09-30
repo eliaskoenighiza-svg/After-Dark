@@ -1,0 +1,8 @@
+After[Dark Park Proxy V6
+
+Warum V6:
+Die Overpass-Abfrage brauchte im Test rund 54 Sekunden. Das ist laenger als der App-Timeout und fuehrte zu "fetch failed" / "request canceled".
+
+V6 verwendet fuer die In-App-Parksuche Nominatim direkt ueber den Cloudflare-Worker. Dadurch entfallen die drei langsamen Overpass-Versuche. Wetter und Memories-Fix bleiben erhalten.
+
+Nach dem Kopieren DEPLOY_PARK_PROXY.bat ausfuehren.

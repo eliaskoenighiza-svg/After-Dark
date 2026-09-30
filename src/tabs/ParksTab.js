@@ -1,25 +1,148 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
+import * as Location from 'expo-location';
 import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/UI';
 import AppIcon from '../components/AppIcon';
 import { Grad } from '../design/Grad';
 import { RampArt } from '../design/art';
 import { Bubble, IconTile, SecondaryButton, Segmented, Tag } from '../design/kit';
-import { NIGHT_MAP_STYLE } from '../design/mapStyle';
 import { COLORS, FONTS, GRADIENTS, RADII, SHADOWS, TYPE } from '../theme';
 import { localGet, localSet } from '../storage';
-import { aiConfigured, searchParksAI, transitAI, weatherAI } from '../services/ai';
-import { openGoogleImages, openGoogleMapsSearch, openTransitRoute } from '../services/maps';
+import { transitAI } from '../services/ai';
+import { getWeather } from '../services/weather';
+import { searchParksInApp } from '../services/parks';
+import { openGoogleImages, openTransitRoute } from '../services/maps';
 
-const DEFAULT_REGION = {
-  latitude: 51.1657,
-  longitude: 10.4515,
-  latitudeDelta: 8,
-  longitudeDelta: 8,
+
+
+const OBSTACLES_BY_SPORT = {
+  scooter: ['Quarter', 'Funbox', 'Spine', 'Bowl', 'Rail', 'Stairs', 'Ledge', 'Bank'],
+  skate: ['Quarter', 'Funbox', 'Spine', 'Bowl', 'Rail', 'Stairs', 'Ledge', 'Bank'],
+  bmx: ['Quarter', 'Funbox', 'Spine', 'Bowl', 'Rail', 'Dirt Jumps', 'Step-up', 'Wallride'],
+  mtb: ['Step-up', 'Step-down', 'Dirt Jumps', 'Pumptrack', 'Drops', 'Tables', 'Wallride'],
+  trampoline: ['Airbag', 'Foam Pit', 'Wall Tramp', 'Supertramp'],
+  'tramp-scooter': ['Airbag', 'Foam Pit', 'Wall Tramp', 'Supertramp'],
+  parkour: ['Rails', 'Walls', 'Precision', 'Vaults', 'Bars', 'Stairs'],
+  diving: ['1 m', '3 m', '5 m', '10 m'],
+  freeski: ['Rail', 'Box', 'Kicker', 'Halfpipe', 'Step-up'],
+  snowboard: ['Rail', 'Box', 'Kicker', 'Halfpipe', 'Step-up'],
+  snowscoot: ['Rail', 'Box', 'Kicker', 'Halfpipe', 'Step-up'],
+  snowbike: ['Rail', 'Box', 'Kicker', 'Halfpipe', 'Step-up'],
+  fitness: ['Pull-up Bars', 'Parallel Bars', 'Monkey Bars'],
 };
 
+function obstacleOptionsForSport(sport) {
+  return OBSTACLES_BY_SPORT[sport?.id] || ['Rail', 'Ramp', 'Box', 'Stairs'];
+}
+
+function safeJson(value) {
+  return JSON.stringify(value).replace(/</g, '\\u003c');
+}
+
+function mapHtml(spots, origin, home) {
+  const data = spots.map((park) => ({
+    name: String(park.name || 'Spot'),
+    typ: String(park.typ || ''),
+    ort: String(park.ort || ''),
+    latitude: Number(park.latitude),
+    longitude: Number(park.longitude),
+    entfernungKm: park.entfernungKm == null ? null : Number(park.entfernungKm),
+    saved: Boolean(park.saved),
+  })).filter((park) => Number.isFinite(park.latitude) && Number.isFinite(park.longitude));
+
+  const start = origin && Number.isFinite(Number(origin.latitude)) && Number.isFinite(Number(origin.longitude))
+    ? { latitude: Number(origin.latitude), longitude: Number(origin.longitude), name: String(home || 'Wohnort') }
+    : null;
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html,body,#map{width:100%;height:100%;margin:0;background:#070D19;overflow:hidden}
+    .leaflet-container{font-family:Arial,sans-serif;background:#070D19}
+    .leaflet-tile{filter:brightness(.78) saturate(.78) contrast(1.08)}
+    .leaflet-control-zoom a{background:#0F182C;color:#F4F6FB;border-color:#18223A}
+    .leaflet-control-attribution{background:rgba(3,5,10,.78)!important;color:#AEB8CA!important;font-size:10px!important}
+    .leaflet-control-attribution a{color:#9AF0F8!important}
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0F182C;color:#F4F6FB}
+    .leaflet-popup-content{margin:10px 12px;line-height:1.35}
+    .name{font-weight:700;font-size:14px;margin-bottom:3px}.meta{font-size:12px;color:#AEB8CA}
+    .liveWrap{position:relative;width:26px;height:26px}
+    .livePulse{position:absolute;inset:0;border-radius:50%;background:rgba(207,255,58,.28);animation:pulse 1.8s ease-out infinite}
+    .liveDot{position:absolute;left:5px;top:5px;width:16px;height:16px;border-radius:50%;background:#CFFF3A;border:4px solid #03050A;box-sizing:border-box;box-shadow:0 0 0 2px rgba(207,255,58,.72)}
+    @keyframes pulse{0%{transform:scale(.75);opacity:1}100%{transform:scale(1.85);opacity:0}}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const spots=${safeJson(data)};
+  const origin=${safeJson(start)};
+  const map=L.map('map',{zoomControl:true,attributionControl:true,preferCanvas:true});
+  let liveMarker=null;
+  let liveAccuracy=null;
+  let liveLatLng=null;
+  const liveIcon=L.divIcon({
+    className:'',
+    html:'<div class="liveWrap"><div class="livePulse"></div><div class="liveDot"></div></div>',
+    iconSize:[26,26],
+    iconAnchor:[13,13]
+  });
+  window.updateLiveLocation=function(lat,lon,accuracy){
+    lat=Number(lat); lon=Number(lon); accuracy=Number(accuracy||0);
+    if(!Number.isFinite(lat)||!Number.isFinite(lon)) return;
+    liveLatLng=[lat,lon];
+    if(!liveMarker){
+      liveMarker=L.marker(liveLatLng,{icon:liveIcon,zIndexOffset:1000}).addTo(map).bindPopup('<div class="name">Dein Live-Standort</div><div class="meta">Aktuelle Position</div>');
+    }else{
+      liveMarker.setLatLng(liveLatLng);
+    }
+    if(accuracy>0){
+      if(!liveAccuracy){
+        liveAccuracy=L.circle(liveLatLng,{radius:accuracy,color:'#CFFF3A',weight:1,fillColor:'#CFFF3A',fillOpacity:.08,interactive:false}).addTo(map);
+      }else{
+        liveAccuracy.setLatLng(liveLatLng);
+        liveAccuracy.setRadius(accuracy);
+      }
+    }
+  };
+  window.focusLiveLocation=function(){
+    if(liveLatLng) map.flyTo(liveLatLng,15,{duration:.7});
+  };
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution:'&copy; OpenStreetMap-Mitwirkende'
+  }).addTo(map);
+  const bounds=[];
+  if(origin){
+    const ll=[origin.latitude,origin.longitude]; bounds.push(ll);
+    L.circleMarker(ll,{radius:9,color:'#9AF0F8',weight:3,fillColor:'#38E1F2',fillOpacity:.95})
+      .addTo(map).bindPopup('<div class="name">'+origin.name+'</div><div class="meta">Ausgangspunkt</div>');
+  }
+  spots.forEach((spot)=>{
+    const ll=[spot.latitude,spot.longitude]; bounds.push(ll);
+    const color=spot.saved?'#CFFF3A':'#38E1F2';
+    const marker=L.circleMarker(ll,{radius:8,color:'#03050A',weight:3,fillColor:color,fillOpacity:1}).addTo(map);
+    const dist=spot.entfernungKm==null?'':(' · '+spot.entfernungKm+' km');
+    marker.bindPopup('<div class="name">'+spot.name+'</div><div class="meta">'+(spot.ort||spot.typ||'Spot')+dist+'</div>');
+  });
+  if(bounds.length>1){map.fitBounds(bounds,{padding:[34,34],maxZoom:14});}
+  else if(bounds.length===1){map.setView(bounds[0],13);}
+  else{map.setView([51.1657,10.4515],6);}
+  setTimeout(()=>map.invalidateSize(),250);
+</script>
+</body>
+</html>`;
+}
+
 export default function ParksTab({ sport, profile, rider = null }) {
+  const mapRef = useRef(null);
+  const locationSubscriptionRef = useRef(null);
   const [parks, setParks] = useState([]);
   const [saved, setSaved] = useState({});
   const [covered, setCovered] = useState(false);
@@ -27,27 +150,74 @@ export default function ParksTab({ sport, profile, rider = null }) {
   const [view, setView] = useState('map');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
-  const [region, setRegion] = useState(DEFAULT_REGION);
   const [travelOpen, setTravelOpen] = useState(null);
   const [travelText, setTravelText] = useState('');
   const [weather, setWeather] = useState(null);
+  const [origin, setOrigin] = useState(null);
+  const [obstaclePrefs, setObstaclePrefs] = useState([]);
+  const [liveLocation, setLiveLocation] = useState(null);
+  const [locationState, setLocationState] = useState('loading');
 
   useEffect(() => {
     (async () => {
       const loaded = await localGet(`parks:${sport.id}`, []);
       setParks(loaded);
       setSaved(await localGet(`parks:saved:${sport.id}`, {}));
+      setObstaclePrefs([]);
+      setOrigin(null);
 
-      if (loaded[0]?.latitude && loaded[0]?.longitude) {
-        setRegion({
-          latitude: +loaded[0].latitude,
-          longitude: +loaded[0].longitude,
-          latitudeDelta: 0.5,
-          longitudeDelta: 0.5,
-        });
-      }
     })();
   }, [sport.id]);
+
+  useEffect(() => {
+    let active = true;
+
+    const startLocation = async () => {
+      try {
+        setLocationState('loading');
+        const permission = await Location.requestForegroundPermissionsAsync();
+
+        if (!active) return;
+
+        if (permission.status !== 'granted') {
+          setLocationState('denied');
+          return;
+        }
+
+        const current = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        if (active && current?.coords) {
+          setLiveLocation(current.coords);
+          setLocationState('live');
+        }
+
+        locationSubscriptionRef.current = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 5000,
+            distanceInterval: 5,
+          },
+          (position) => {
+            if (!active || !position?.coords) return;
+            setLiveLocation(position.coords);
+            setLocationState('live');
+          }
+        );
+      } catch (error) {
+        if (active) setLocationState('error');
+      }
+    };
+
+    startLocation();
+
+    return () => {
+      active = false;
+      locationSubscriptionRef.current?.remove?.();
+      locationSubscriptionRef.current = null;
+    };
+  }, []);
 
   const filtered = useMemo(
     () =>
@@ -59,29 +229,36 @@ export default function ParksTab({ sport, profile, rider = null }) {
     [parks, covered, floodlight]
   );
 
+
+
+  const toggleObstacle = (name) => {
+    setObstaclePrefs((current) => {
+      if (current.includes(name)) {
+        return current.filter((item) => item !== name);
+      }
+
+      if (current.length >= 3) {
+        setNotice('Du kannst höchstens 3 Wunsch-Obstacles gleichzeitig auswählen.');
+        return current;
+      }
+
+      setNotice('');
+      return [...current, name];
+    });
+  };
+
   const search = async () => {
     setBusy(true);
     setNotice('');
 
     try {
-      if (!aiConfigured()) {
-        throw new Error(
-          'Für die echte KI-Websuche zuerst den KI-Proxy starten. Google Maps kannst du trotzdem direkt öffnen.'
-        );
-      }
-
-      const result = await searchParksAI(
+      const result = await searchParksInApp(
         sport,
         profile.home,
-        {
-          covered,
-          floodlight,
-        }
+        obstaclePrefs
       );
 
-      const valid = (
-        Array.isArray(result) ? result : []
-      ).filter(
+      const valid = (result.parks || []).filter(
         (entry) =>
           Number.isFinite(+entry.latitude) &&
           Number.isFinite(+entry.longitude)
@@ -90,18 +267,13 @@ export default function ParksTab({ sport, profile, rider = null }) {
       setParks(valid);
       await localSet(`parks:${sport.id}`, valid);
 
-      if (valid[0]) {
-        setRegion({
-          latitude: +valid[0].latitude,
-          longitude: +valid[0].longitude,
-          latitudeDelta: 0.5,
-          longitudeDelta: 0.5,
-        });
+      if (result.origin) {
+        setOrigin(result.origin);
       }
 
       if (!valid.length) {
         setNotice(
-          'Die Suche hat keine verwertbaren Anlagen mit Koordinaten geliefert.'
+          'In der Umgebung wurden keine passenden, öffentlich kartierten Anlagen gefunden.'
         );
       }
     } catch (error) {
@@ -111,9 +283,31 @@ export default function ParksTab({ sport, profile, rider = null }) {
     }
   };
 
-  const googleSearch = () => {
-    openGoogleMapsSearch(
-      `${sport.parkTypes.join(' oder ')} ${sport.name} ${profile.home}`
+  const mapSource = useMemo(() => {
+    const mapSpots = filtered.map((park) => ({
+      ...park,
+      saved: Boolean(saved[`${park.name}|${park.ort}`]),
+    }));
+    return mapHtml(mapSpots, origin, profile.home);
+  }, [filtered, origin, profile.home, saved]);
+
+  useEffect(() => {
+    if (!liveLocation || !mapRef.current) return;
+
+    const lat = Number(liveLocation.latitude);
+    const lon = Number(liveLocation.longitude);
+    const accuracy = Number(liveLocation.accuracy || 0);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+    mapRef.current.injectJavaScript(
+      `window.updateLiveLocation && window.updateLiveLocation(${lat}, ${lon}, ${accuracy}); true;`
+    );
+  }, [liveLocation, view, mapSource]);
+
+  const focusLiveLocation = () => {
+    mapRef.current?.injectJavaScript(
+      'window.focusLiveLocation && window.focusLiveLocation(); true;'
     );
   };
 
@@ -163,7 +357,7 @@ export default function ParksTab({ sport, profile, rider = null }) {
     setNotice('');
 
     try {
-      const result = await weatherAI(
+      const result = await getWeather(
         profile.home,
         sport
       );
@@ -262,6 +456,14 @@ export default function ParksTab({ sport, profile, rider = null }) {
               icon="flood"
             />
           </View>
+
+          {Array.isArray(park.obstacles) && park.obstacles.length ? (
+            <View style={styles.wrap}>
+              {park.obstacles.slice(0, 4).map((name) => (
+                <Tag key={name} label={name} tone="cyan" />
+              ))}
+            </View>
+          ) : null}
 
           {park.ausstattung ? (
             <Text style={styles.body}>
@@ -397,61 +599,16 @@ export default function ParksTab({ sport, profile, rider = null }) {
     );
   };
 
-  const viewSwitch = (
-    <Segmented
-      items={[
-        { key: 'map', label: 'Karte', icon: 'map' },
-        { key: 'list', label: 'Liste', icon: 'list' },
-      ]}
-      value={view}
-      onChange={(next) => setView(next)}
-      style={styles.viewSwitch}
-    />
-  );
 
   return (
     <View style={styles.stack}>
-      {view === 'map' ? (
-        <View style={styles.mapHero}>
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={StyleSheet.absoluteFill}
-            region={region}
-            onRegionChangeComplete={setRegion}
-            customMapStyle={NIGHT_MAP_STYLE}
-          >
-            {filtered.map((park, index) => (
-              <Marker
-                key={`${park.name}-${index}`}
-                coordinate={{
-                  latitude: +park.latitude,
-                  longitude: +park.longitude,
-                }}
-                title={park.name}
-                description={`${park.typ || ''} · ${park.erlaubnis || ''}`}
-                pinColor={saved[`${park.name}|${park.ort}`] ? COLORS.lime : COLORS.cyan}
-              />
-            ))}
-          </MapView>
-          <View pointerEvents="none" style={styles.mapFade}>
-            <Grad colors={['rgba(3,5,10,0)', 'rgba(3,5,10,0.85)', '#03050A']} locations={[0, 0.55, 1]} angle={180} />
-          </View>
-          <View pointerEvents="none" style={styles.mapTitle}>
-            <Text style={styles.heroTitle}>Parks</Text>
-            <Text style={[TYPE.body, { marginTop: 8 }]}>Karte, Spots &amp; Wetter</Text>
-          </View>
-          {viewSwitch}
+      <View style={styles.listHero}>
+        <RampArt height={236} />
+        <View pointerEvents="none" style={styles.mapTitle}>
+          <Text style={styles.heroTitle}>Parks</Text>
+          <Text style={[TYPE.body, { marginTop: 8 }]}>Spots, Wetter &amp; Karte</Text>
         </View>
-      ) : (
-        <View style={styles.listHero}>
-          <RampArt height={236} />
-          <View pointerEvents="none" style={styles.mapTitle}>
-            <Text style={styles.heroTitle}>Parks</Text>
-            <Text style={[TYPE.body, { marginTop: 8 }]}>Karte, Spots &amp; Wetter</Text>
-          </View>
-          {viewSwitch}
-        </View>
-      )}
+      </View>
 
       {rider}
 
@@ -463,18 +620,12 @@ export default function ParksTab({ sport, profile, rider = null }) {
         <View style={styles.row}>
           <IconTile name="map" size={46} iconSize={22} gradient={{ colors: ['#9CCBFF', '#2A63B8'], angle: 145 }} color="#071A36" radius={16} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Title>Google Maps</Title>
-            <Text style={TYPE.label} numberOfLines={2}>
-              Passende Anlagen für {sport.name}: {sport.parkTypes.join(', ')}.
+            <Title>Spots in der App</Title>
+            <Text style={TYPE.label} numberOfLines={3}>
+              Suche passende Anlagen für {sport.name}. Treffer erscheinen direkt auf der Karte und in der Liste.
             </Text>
           </View>
         </View>
-
-        <Button
-          title="Websuche mit Google Maps"
-          icon="pin"
-          onPress={googleSearch}
-        />
 
         <View style={styles.filterGrid}>
           <Pressable
@@ -516,26 +667,42 @@ export default function ParksTab({ sport, profile, rider = null }) {
           </Pressable>
         </View>
 
-        <SecondaryButton
-          title={
-            busy
-              ? 'Suche läuft…'
-              : 'KI-Anlagensuche'
-          }
-          icon="chip"
-          tone="cyan"
+        <View style={styles.obstacleSection}>
+          <View style={styles.headRow}>
+            <Text style={styles.filterTitle}>Wunsch-Obstacles</Text>
+            <Text style={TYPE.label}>optional · max. 3</Text>
+          </View>
+          <View style={styles.obstacleWrap}>
+            {obstacleOptionsForSport(sport).map((name) => (
+              <Pill
+                key={name}
+                label={name}
+                active={obstaclePrefs.includes(name)}
+                onPress={() => toggleObstacle(name)}
+              />
+            ))}
+          </View>
+          <Text style={TYPE.caption}>
+            Gewählte Obstacles werden bei der Suche bevorzugt, soweit die Kartendaten sie erkennen.
+          </Text>
+        </View>
+
+        <Button
+          title={busy ? 'Suche läuft…' : 'Spots in der App suchen'}
+          icon="pin"
           disabled={busy}
           onPress={search}
         />
+
         <Text style={[TYPE.caption, { textAlign: 'center' }]}>
-          Derzeit nicht verfügbar – nutze Google Maps.
+          Die Suche bleibt in After[Dark. Kartendaten kommen aus OpenStreetMap.
         </Text>
       </Card>
 
       <Card>
         <View style={styles.headRow}>
           <Title>Wetter am Wohnort</Title>
-          <Tag label={weather ? 'KI' : 'nicht verfügbar'} tone={weather ? 'cyan' : 'neutral'} />
+          <Tag label={weather ? 'Live' : 'Open-Meteo'} tone="cyan" />
         </View>
 
         <View style={styles.weatherGrid}>
@@ -563,14 +730,9 @@ export default function ParksTab({ sport, profile, rider = null }) {
                 )}
               </Text>
             </Bubble>
-            {weather.schneehoehe || weather.pistenzustand ? (
+            {weather.schneefall ? (
               <View style={styles.wrap}>
-                {weather.schneehoehe ? (
-                  <Tag label={`Schneehöhe: ${String(weather.schneehoehe)}`} tone="cyan" icon="snow" />
-                ) : null}
-                {weather.pistenzustand ? (
-                  <Tag label={`Piste: ${String(weather.pistenzustand)}`} tone="cyan" />
-                ) : null}
+                <Tag label={`Neuschnee: ${String(weather.schneefall)}`} tone="cyan" icon="snow" />
               </View>
             ) : null}
             {weather.nass === true ? (
@@ -582,8 +744,7 @@ export default function ParksTab({ sport, profile, rider = null }) {
           </>
         ) : (
           <Muted>
-            Die Wetterabfrage braucht KI-Websuche. Mit der aktuellen
-            Cloudflare-KI ist sie derzeit nicht verfügbar.
+            Live-Wetter kommt direkt von Open-Meteo und braucht keinen API-Key.
           </Muted>
         )}
 
@@ -595,9 +756,21 @@ export default function ParksTab({ sport, profile, rider = null }) {
         />
       </Card>
 
-      <View style={styles.headRow}>
-        <Text style={[TYPE.head, { fontSize: 22, lineHeight: 26 }]}>Spots in der Nähe</Text>
-        <Text style={TYPE.label}>{filtered.length} Treffer</Text>
+      <View style={styles.resultsHeader}>
+        <View style={styles.headRow}>
+          <Text style={[TYPE.head, { fontSize: 22, lineHeight: 26 }]}>Spots in der Nähe</Text>
+          <Text style={TYPE.label}>{filtered.length} Treffer</Text>
+        </View>
+
+        <Segmented
+          items={[
+            { key: 'map', label: 'Karte', icon: 'map' },
+            { key: 'list', label: 'Liste', icon: 'list' },
+          ]}
+          value={view}
+          onChange={(next) => setView(next)}
+          style={styles.bottomViewSwitch}
+        />
       </View>
 
       {filtered.length === 0 ? (
@@ -609,31 +782,66 @@ export default function ParksTab({ sport, profile, rider = null }) {
           <View style={styles.spotBody}>
             <Text style={styles.spotName}>Noch keine Spots</Text>
             <Muted>
-              Such reale Parks und Anlagen direkt in Google Maps.
+              Starte oben die In-App-Suche. Treffer erscheinen anschließend hier und auf der großen Karte.
             </Muted>
             <SecondaryButton
-              title="In Google Maps öffnen"
+              title="Spots suchen"
               icon="pin"
               tone="cyan"
-              onPress={googleSearch}
+              disabled={busy}
+              onPress={search}
             />
           </View>
         </View>
       ) : view === 'map' ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          nestedScrollEnabled
-          snapToInterval={328}
-          decelerationRate="fast"
-          style={{ marginHorizontal: -18 }}
-          contentContainerStyle={styles.carousel}
-        >
-          {filtered.map((park, index) => renderPark(park, index, true))}
-        </ScrollView>
+        <View style={[styles.resultsMapWrap, SHADOWS.card]}>
+          <WebView
+            ref={mapRef}
+            style={styles.resultsMap}
+            originWhitelist={['*']}
+            source={{ html: mapSource }}
+            javaScriptEnabled
+            domStorageEnabled
+            mixedContentMode="always"
+            setSupportMultipleWindows={false}
+            onLoadEnd={() => {
+              if (!liveLocation || !mapRef.current) return;
+              const lat = Number(liveLocation.latitude);
+              const lon = Number(liveLocation.longitude);
+              const accuracy = Number(liveLocation.accuracy || 0);
+              mapRef.current.injectJavaScript(
+                `window.updateLiveLocation && window.updateLiveLocation(${lat}, ${lon}, ${accuracy}); true;`
+              );
+            }}
+          />
+          <View pointerEvents="none" style={styles.mapCountBadge}>
+            <Text style={styles.mapCountText}>{filtered.length} Spots</Text>
+          </View>
+          <Pressable
+            onPress={focusLiveLocation}
+            disabled={!liveLocation}
+            style={[styles.liveButton, !liveLocation && styles.liveButtonDisabled]}
+            accessibilityRole="button"
+            accessibilityLabel="Zu meinem Live-Standort"
+          >
+            <View style={[styles.liveDotSmall, locationState === 'live' && styles.liveDotSmallOn]} />
+            <Text style={styles.liveButtonText}>
+              {locationState === 'live'
+                ? 'Mein Standort'
+                : locationState === 'denied'
+                  ? 'Standort aus'
+                  : locationState === 'error'
+                    ? 'Standortfehler'
+                    : 'Standort…'}
+            </Text>
+          </Pressable>
+        </View>
       ) : (
-        filtered.map((park, index) => renderPark(park, index, false))
+        <View style={styles.listResults}>
+          {filtered.map((park, index) => renderPark(park, index, false))}
+        </View>
       )}
+
     </View>
   );
 }
@@ -673,11 +881,78 @@ const styles = StyleSheet.create({
     lineHeight: 92,
     letterSpacing: -1.2,
   },
-  viewSwitch: {
+  bottomViewSwitch: {
+    alignSelf: 'stretch',
+  },
+  resultsHeader: {
+    gap: 10,
+  },
+  resultsMapWrap: {
+    height: 580,
+    borderRadius: RADII.card,
+    overflow: 'hidden',
+    backgroundColor: '#070D19',
+  },
+  resultsMap: {
+    width: '100%',
+    height: '100%',
+  },
+  mapCountBadge: {
     position: 'absolute',
-    right: 18,
+    left: 16,
+    top: 16,
+    paddingHorizontal: 12,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(3,5,10,0.78)',
+  },
+  mapCountText: {
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    fontSize: 12,
+  },
+  liveButton: {
+    position: 'absolute',
+    right: 14,
     top: 14,
-    boxShadow: '0 12px 30px -10px rgba(0,0,0,0.8)',
+    height: 38,
+    borderRadius: 19,
+    paddingHorizontal: 13,
+    backgroundColor: 'rgba(3,5,10,0.84)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  liveButtonDisabled: {
+    opacity: 0.6,
+  },
+  liveButtonText: {
+    fontFamily: FONTS.bold,
+    color: COLORS.text,
+    fontSize: 12,
+  },
+  liveDotSmall: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: COLORS.mutedNum,
+  },
+  liveDotSmallOn: {
+    backgroundColor: COLORS.lime,
+    boxShadow: '0 0 10px rgba(207,255,58,0.9)',
+  },
+  listResults: {
+    gap: 14,
+  },
+  obstacleSection: {
+    gap: 10,
+    paddingTop: 2,
+  },
+  obstacleWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   filterGrid: {
     flexDirection: 'row',

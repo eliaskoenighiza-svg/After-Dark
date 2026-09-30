@@ -1,0 +1,19 @@
+After[Dark - Park-Suche V3
+
+Warum V3:
+Android/React Native hat direkte Requests an die öffentlichen Overpass-Server abgebrochen.
+V3 schickt die Overpass-Suche deshalb über deinen bereits funktionierenden Cloudflare Worker.
+
+Dateien:
+- src/services/parks.js
+- cloudflare-ai/src/index.js
+- DEPLOY_PARK_PROXY.bat
+
+Nach dem Kopieren MUSS der Cloudflare Worker einmal neu deployed werden:
+1. DEPLOY_PARK_PROXY.bat doppelklicken
+2. Warten bis Wrangler "Deployed" meldet
+3. After[Dark neu starten
+4. Parks in der App suchen
+
+Keine .env-Datei wird verändert.
+Supabase und KI-Konfiguration bleiben erhalten.

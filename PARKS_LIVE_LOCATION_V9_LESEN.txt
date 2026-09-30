@@ -1,0 +1,19 @@
+After[Dark - Parks Live-Standort V9
+
+Neu:
+- Live-Standort direkt auf der OpenStreetMap-Karte.
+- Lime pulsierender Marker fuer die aktuelle Position.
+- Genauigkeitskreis um den Standort.
+- Button "Mein Standort" oben rechts auf der Karte zentriert wieder auf die aktuelle Position.
+- Position aktualisiert sich waehrend der Parks-Ansicht automatisch.
+
+Installation:
+1. Inhalt dieses After-Dark-Ordners in das bestehende Projekt kopieren.
+2. INSTALL_LIVE_LOCATION.bat ausfuehren.
+3. App neu starten.
+4. Beim ersten Oeffnen von Parks Standortzugriff erlauben.
+
+Hinweis Emulator:
+Der Android-Emulator liefert seinen simulierten GPS-Standort. Auf dem echten Handy wird der echte Handy-Standort verwendet.
+
+Kein Cloudflare-Deploy erforderlich.

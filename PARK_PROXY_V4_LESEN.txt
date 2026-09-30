@@ -1,0 +1,15 @@
+After[Dark - Parks In-App V4
+
+V4 behebt den HTTP-502-Fehler der Park-Suche:
+- kleinere, schnellere Overpass-Abfragen (keine breite Namens-RegEx mehr)
+- Cloudflare Worker probiert mehrere Overpass-Mirrors
+- GET und POST Fallback pro Mirror
+- wenn Overpass komplett ausfällt: OpenStreetMap/Nominatim-Fallback
+- Treffer bleiben in After[Dark und erscheinen auf Karte/Liste
+
+Enthalten bleiben außerdem:
+- Live-Wetter über Open-Meteo ohne API-Key
+- Memories bis 100 Bilder
+
+Nach dem Kopieren unbedingt DEPLOY_PARK_PROXY.bat ausführen.
+Keine .env-Datei wird verändert. Supabase bleibt unangetastet.

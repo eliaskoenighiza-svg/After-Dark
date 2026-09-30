@@ -1,0 +1,17 @@
+After[Dark – Night Ride V2 Fix
+
+Enthalten:
+- Wetter live über Open-Meteo, ohne KI-Websuche und ohne zusätzlichen API-Key.
+- Memories: bis zu 100 Bilder in Privat und Crew.
+- Park-/Spot-Suche bleibt in After[Dark:
+  * keine Weiterleitung zu Google Maps bei der Suche
+  * reale, öffentlich kartierte Anlagen aus OpenStreetMap/Overpass
+  * Treffer erscheinen direkt als Marker in der bestehenden In-App-Karte und als Karten/Liste
+  * Überdacht- und Flutlichtfilter funktionieren weiter
+- Anreise und Bildersuche bleiben unverändert und werden nur geöffnet, wenn du sie ausdrücklich antippst.
+
+Einbau:
+Den Inhalt des Ordners After-Dark in den bestehenden After-Dark-Projektordner kopieren und vorhandene Dateien ersetzen.
+Kein npm install nötig.
+
+V2: Park-Suche nutzt Overpass jetzt per HTTPS-GET statt POST, weil Android/React-Native bei manchen Overpass-POST-Aufrufen nur "fetch failed" liefert.
