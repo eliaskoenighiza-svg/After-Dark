@@ -1,9 +1,9 @@
 import React from 'react';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
-export default function SportIcon({ id, color = '#C8F531', size = 24 }) {
-  const p = { stroke: color, strokeWidth: 1.8, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
-  const w = { stroke: '#EDEDF2', strokeWidth: 1.8, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
+export default function SportIcon({ id, color = '#C8F531', size = 24, mono = false, strokeWidth = 1.8 }) {
+  const p = { stroke: color, strokeWidth, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
+  const w = { stroke: mono ? color : '#EDEDF2', strokeWidth, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
   return <Svg width={size} height={size} viewBox="0 0 24 24">
     {['scooter','tramp-scooter','snowscoot'].includes(id) && <><Circle cx="6" cy="19" r="2" {...w}/><Circle cx="18" cy="19" r="2" {...w}/><Line x1="6" y1="17" x2="16" y2="17" {...p}/><Line x1="16" y1="17" x2="18" y2="7" {...p}/><Line x1="15" y1="7" x2="21" y2="7" {...w}/></>}
     {['bmx','mtb','snowbike'].includes(id) && <><Circle cx="6" cy="17" r="4" {...w}/><Circle cx="18" cy="17" r="4" {...w}/><Path d="M6 17l4-7 4 7H6zm4-7h5l3 7m-8-7-2-2m7 2 2-2" {...p}/></>}

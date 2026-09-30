@@ -1,0 +1,31 @@
+After[Dark – Night Ride v2 (Design-Update)
+==========================================
+
+Was ist das?
+Das komplette neue Design aus dem Canvas, umgesetzt im Code.
+Geändert wurden nur Darstellung und Layout. Logik, Speicherung,
+Supabase, Cloudflare-KI, Google Maps und .env sind unverändert.
+
+Einbauen
+1. Projektordner sichern (Kopie anlegen).
+2. Den Inhalt dieses Ordners "After-Dark" in deinen Projektordner
+   kopieren und vorhandene Dateien ersetzen.
+3. Im Projektordner einmal ausführen:
+      npm install
+   (neu ist nur das Paket expo-font, Version ~57.0.4)
+4. App wie gewohnt starten (START_AFTER_DARK.bat) und mit -c den
+   Cache leeren, falls alte Styles hängen:  npx expo start -c
+
+Wichtig
+- SETUP_KI_MAPS.bat NICHT ausführen (überschreibt die Cloudflare-URL
+  in .env.local).
+- Nichts wurde committet oder gepusht.
+
+Neue Dateien
+- assets/fonts/  (Archivo + Geist, OFL-Lizenz liegt bei)
+- src/design/    (Farbverläufe, Grafiken, UI-Bausteine, Karten-Stil)
+
+Parks
+- Der Lime-Hauptbutton "Websuche mit Google Maps" öffnet jetzt die
+  echte Google-Maps-Suche. Die KI-Anlagensuche ist nur noch
+  zweiter Button (mit Cloudflare/Gemma derzeit ohne Websuche).

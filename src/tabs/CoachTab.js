@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAudioPlayer } from 'expo-audio';
 import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/UI';
-import PageHero from '../components/PageHero';
-import { COLORS } from '../theme';
+import AppIcon from '../components/AppIcon';
+import { Grad } from '../design/Grad';
+import { DiceArt, SessionDial } from '../design/art';
+import { Bubble, IconTile, PosterCard, ProgressRing, SecondaryButton, Segmented, Sticker, Surface, Tag } from '../design/kit';
+import { COLORS, FONTS, GRADIENTS, RADII, TYPE } from '../theme';
 import { effectiveSlots, loadSkillContext } from '../services/skills';
 import { localGet, localSet } from '../storage';
 import { checkAIConnection, coachAI, dailyTrickAI } from '../services/ai';
@@ -277,222 +280,181 @@ export default function CoachTab({ sport, stats, setStats, connection = null }) 
     await localSet('streak:last', today);
   };
 
+  const doneCount = (skillContext.completed || []).length;
+  const skillProgress = tricks.length ? doneCount / tricks.length : 0;
+  const running = !!timerStart;
+
   return (
     <View style={styles.stack}>
-      <PageHero
-        type="coach"
-        title="Coach"
-        subtitle="TRICK DES TAGES · SESSION · KI"
-        accent={sport.color}
-      />
-
       {connection}
 
       {notice ? (
         <Notice>{notice}</Notice>
       ) : null}
 
-      <Card variant="cyan">
-        <Muted>NÄCHSTER SKILL</Muted>
-        <Text
-          style={[
-            styles.next,
-            { color: sport.color },
-          ]}
-        >
-          {skillContext.next?.name ||
-            'Skill-Baum komplett'}
-        </Text>
-        <Muted>
-          After[Dark nutzt diesen Stand als
-          Grundlage für deine nächsten
-          Vorschläge.
-        </Muted>
-      </Card>
-
-      <Card variant="blue">
-        <View style={styles.cardHeader}>
-          <View style={[
-            styles.numberBadge,
-            { borderColor: sport.color },
-          ]}>
-            <Text
-              style={[
-                styles.numberBadgeText,
-                { color: sport.color },
-              ]}
-            >
-              01
-            </Text>
-          </View>
-          <Title color={sport.color}>
-            Trick des Tages
-          </Title>
+      <PosterCard gradient={GRADIENTS.coach} glow="rgba(56,225,242,0.35)" watermark="01">
+        <View style={styles.posterTop}>
+          <Sticker label="Heute" tone="lime" />
+          {daily ? (
+            daily.offline ? (
+              <Tag label="Offline" tone="neutral" />
+            ) : (
+              <Tag label="KI-Auswahl" tone="cyan" icon="chip" />
+            )
+          ) : null}
         </View>
+
+        <Text style={[TYPE.label, styles.posterLabel]}>Trick des Tages</Text>
 
         {daily ? (
           <>
-            <Text style={styles.big}>
+            <Text style={styles.posterTitle} numberOfLines={2} adjustsFontSizeToFit>
               {daily.trick}
             </Text>
-            <Text style={styles.text}>
-              {daily.tip}
-            </Text>
-            <Muted>{daily.safety}</Muted>
-            <View style={styles.statusRow}>
-              <View
-                style={[
-                  styles.statusDot,
-                  {
-                    backgroundColor:
-                      daily.offline
-                        ? COLORS.warning
-                        : COLORS.success,
-                  },
-                ]}
-              />
-              <Muted>
-                {daily.offline
-                  ? 'Offline aus deinem Skill-Baum gewählt.'
-                  : 'Heute per KI passend zu deinem Skillstand gewählt.'}
-              </Muted>
+            <Text style={styles.posterText}>{daily.tip}</Text>
+            <View style={styles.safetyWell}>
+              <IconTile name="shield" size={36} iconSize={18} bg={COLORS.cyanSoft} color={COLORS.cyan} radius={12} fillOpacity={0.22} />
+              <Text style={[TYPE.caption, { flex: 1, color: '#B9C4D6' }]}>{daily.safety}</Text>
             </View>
+            <Text style={[TYPE.caption, styles.posterFoot]}>
+              {daily.offline
+                ? 'Offline aus deinem Skill-Baum gewählt.'
+                : 'Heute per KI passend zu deinem Skillstand gewählt.'}
+            </Text>
           </>
         ) : (
-          <Muted>Lädt…</Muted>
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={COLORS.cyan} />
+            <Text style={[styles.posterTitle, { color: COLORS.mutedNum, fontSize: 40, lineHeight: 42 }]}>Lädt…</Text>
+          </View>
         )}
-      </Card>
+      </PosterCard>
 
-      <Card variant="lime">
-        <View style={styles.cardHeader}>
-          <View style={[
-            styles.numberBadge,
-            { borderColor: COLORS.volt },
-          ]}>
-            <Text style={[
-              styles.numberBadgeText,
-              { color: COLORS.volt },
-            ]}>
-              02
+      <View style={styles.bento}>
+        <Surface radius={RADII.cardSm} style={styles.bentoCard}>
+          <ProgressRing size={58} progress={skillProgress}>
+            <Text style={[TYPE.number, { fontSize: 17 }]}>{doneCount}</Text>
+          </ProgressRing>
+          <View style={{ gap: 5 }}>
+            <Text style={TYPE.label}>Nächster Skill</Text>
+            <Text style={styles.bentoValue} numberOfLines={2}>
+              {skillContext.next?.name || 'Skill-Baum komplett'}
             </Text>
           </View>
-          <Title small>
-            Session starten
-          </Title>
+        </Surface>
+
+        <Surface radius={RADII.cardSm} gradient={GRADIENTS.tileLime} style={styles.bentoCard}>
+          <IconTile name="flame" size={58} iconSize={28} bg={COLORS.lime} color="#0B1404" radius={18} fillOpacity={0.35} />
+          <View style={{ gap: 5 }}>
+            <Text style={TYPE.label}>Streak</Text>
+            <Text style={styles.bentoValue}>{stats.streak || 0} Tage</Text>
+          </View>
+        </Surface>
+      </View>
+
+      <Card>
+        <View style={styles.headRow}>
+          <Title>Session</Title>
+          {running ? <Tag label="Läuft" tone="lime" dot /> : <Tag label="Bereit" tone="neutral" />}
         </View>
 
-        <Text style={styles.timer}>
-          {fmt(elapsed)}
-        </Text>
+        <SessionDial minutes={Math.floor(elapsed / 60)} running={running}>
+          <Text style={[TYPE.number, { fontSize: 58, lineHeight: 60 }]}>{fmt(elapsed)}</Text>
+          <Text style={TYPE.label}>Trainingszeit</Text>
+        </SessionDial>
 
         {!timerStart ? (
           <Button
             title="Session starten"
+            icon="play"
             onPress={startTimer}
           />
         ) : (
-          <Button
+          <SecondaryButton
             title="Stop + speichern"
             tone="pink"
+            icon="save"
+            style={{ height: 60 }}
             onPress={stopTimer}
           />
         )}
 
-        <Muted>
-          Die Startzeit wird gespeichert und
-          läuft auch bei kurzer App-Pause
-          weiter.
-        </Muted>
+        <Text style={[TYPE.caption, { textAlign: 'center' }]}>
+          Die Startzeit wird gespeichert und läuft auch bei kurzer
+          App-Pause weiter.
+        </Text>
       </Card>
 
-      <View style={styles.twoCol}>
-        <View style={styles.col}>
-          <Card variant="purple">
-            <Title small>
-              Trick-Roulette
-            </Title>
+      <View style={styles.bento}>
+        <Surface radius={RADII.cardSm} style={styles.bentoCard}>
+          <DiceArt />
+          <Text style={TYPE.label}>Trick-Roulette</Text>
+          {roulette ? (
+            <Text style={styles.tileResult} numberOfLines={2} adjustsFontSizeToFit>
+              {roulette.name}
+            </Text>
+          ) : (
+            <Text style={[TYPE.caption, { minHeight: 36 }]}>
+              Ziehe einen Trick aus deinem aktuellen Skill-Baum.
+            </Text>
+          )}
+          <SecondaryButton
+            title="Trick ziehen"
+            size="sm"
+            onPress={() =>
+              setRoulette(
+                tricks[
+                  Math.floor(
+                    Math.random() *
+                      tricks.length
+                  )
+                ]
+              )
+            }
+          />
+        </Surface>
 
-            {roulette ? (
-              <Text style={styles.miniBig}>
-                {roulette.name}
-              </Text>
-            ) : (
-              <Muted>
-                Ziehe einen Trick aus deinem
-                aktuellen Skill-Baum.
-              </Muted>
-            )}
-
-            <Button
-              title="Trick ziehen"
-              tone="dark"
-              onPress={() =>
-                setRoulette(
-                  tricks[
-                    Math.floor(
-                      Math.random() *
-                        tricks.length
-                    )
-                  ]
-                )
-              }
-            />
-          </Card>
-        </View>
-
-        <View style={styles.col}>
-          <Card variant="pink">
-            <Title small>
-              Countdown
-            </Title>
-
-            <View style={styles.rowWrap}>
-              {[30, 60, 120].map((value) => (
-                <Pill
-                  key={value}
-                  label={`${value} s`}
-                  active={
-                    countdown === value
-                  }
-                  onPress={() =>
-                    setCountdown(value)
-                  }
-                  color={sport.color}
-                />
-              ))}
-            </View>
-
-            {countdown > 0 ? (
-              <Text style={styles.countdown}>
-                {countdown}
-              </Text>
-            ) : null}
-          </Card>
-        </View>
+        <Surface radius={RADII.cardSm} style={styles.bentoCard}>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 3, height: 54 }}>
+            <Text
+              style={[
+                TYPE.number,
+                {
+                  fontSize: 56,
+                  lineHeight: 58,
+                  color: countdown > 0 && countdown <= 3 ? COLORS.pink : COLORS.cyan,
+                },
+              ]}
+            >
+              {countdown > 0 ? countdown : '–'}
+            </Text>
+            {countdown > 0 ? <Text style={[TYPE.head, { color: COLORS.cyan, fontSize: 16 }]}>s</Text> : null}
+          </View>
+          <Text style={TYPE.label}>Countdown</Text>
+          <Segmented
+            items={[30, 60, 120].map((value) => ({ key: value, label: String(value) }))}
+            value={countdown === 30 || countdown === 60 || countdown === 120 ? countdown : null}
+            onChange={(value) => setCountdown(value)}
+          />
+        </Surface>
       </View>
 
-      <Card variant="pink">
-        <Title small>KI-Trick-Coach</Title>
-        <Muted>
-          Frage nach einem Trick oder füge
-          ein Foto hinzu.
-        </Muted>
+      <Card>
+        <View style={styles.row}>
+          <IconTile name="chip" size={46} iconSize={22} gradient={GRADIENTS.avatarCyan} color="#04202A" radius={16} />
+          <View style={{ gap: 4, flex: 1 }}>
+            <Title>KI-Trick-Coach</Title>
+            <Text style={TYPE.label}>Fragen, Fotos, Feedback</Text>
+          </View>
+        </View>
+
+        <Bubble>Frage nach einem Trick oder füge ein Foto hinzu.</Bubble>
 
         <Field
           value={question}
           onChangeText={setQuestion}
           placeholder="z. B. Warum bekomme ich beim Fingerwhip das Deck nicht zurück?"
           multiline
-        />
-
-        <Button
-          title={
-            coachImage
-              ? 'Foto gewählt'
-              : 'Foto hinzufügen'
-          }
-          tone="dark"
-          onPress={chooseCoachImage}
         />
 
         {coachImage ? (
@@ -504,89 +466,169 @@ export default function CoachTab({ sport, stats, setStats, connection = null }) 
           />
         ) : null}
 
-        <Button
-          title={
-            coachBusy
-              ? 'Coach denkt…'
-              : 'Coach fragen'
-          }
-          disabled={
-            coachBusy ||
-            (!question.trim() &&
-              !coachImage)
-          }
-          onPress={() => runCoach(false)}
-        />
+        <View style={styles.row}>
+          <SecondaryButton
+            title={
+              coachImage
+                ? 'Foto gewählt'
+                : 'Foto hinzufügen'
+            }
+            icon="camera"
+            onPress={chooseCoachImage}
+          />
+          <View style={{ flex: 1 }}>
+            <Button
+              title={
+                coachBusy
+                  ? 'Coach denkt…'
+                  : 'Coach fragen'
+              }
+              icon="send"
+              compact
+              disabled={
+                coachBusy ||
+                (!question.trim() &&
+                  !coachImage)
+              }
+              onPress={() => runCoach(false)}
+            />
+          </View>
+        </View>
+
+        {coachBusy ? (
+          <Bubble tone="cyan">
+            <View style={styles.row}>
+              <ActivityIndicator color={COLORS.cyan} size="small" />
+              <Text style={[TYPE.caption, { color: COLORS.cyanText }]}>Der Coach denkt nach…</Text>
+            </View>
+          </Bubble>
+        ) : null}
 
         {coachAnswer ? (
-          <Text style={styles.answer}>
-            {coachAnswer}
-          </Text>
+          <Bubble tone="cyan" style={{ alignSelf: 'stretch' }}>
+            <Text style={styles.answer}>
+              {coachAnswer}
+            </Text>
+          </Bubble>
         ) : null}
       </Card>
 
-      <Card variant="night">
-        <Title small>Session-Notizen</Title>
+      <Card>
+        <View style={styles.headRow}>
+          <Title>Session-Notizen</Title>
+          <Text style={TYPE.label}>5 neueste</Text>
+        </View>
 
-        <Field
-          value={note}
-          onChangeText={setNote}
-          placeholder="Was lief heute gut?"
-        />
-
-        <Button
-          title="Notiz speichern"
-          tone="dark"
-          onPress={addNote}
-        />
-
-        {notes.slice(0, 5).map((entry) => (
-          <View
-            key={entry.id}
-            style={styles.note}
-          >
-            <Text style={styles.text}>
-              {entry.text}
-            </Text>
-            <Muted>{entry.at}</Muted>
+        <View style={styles.inputRow}>
+          <View style={{ flex: 1 }}>
+            <Field
+              value={note}
+              onChangeText={setNote}
+              placeholder="Was lief heute gut?"
+            />
           </View>
-        ))}
+          <Pressable
+            onPress={addNote}
+            accessibilityRole="button"
+            accessibilityLabel="Notiz speichern"
+            style={({ pressed }) => [styles.roundAction, pressed && { opacity: 0.8 }]}
+          >
+            <AppIcon name="plus" size={20} color={COLORS.onLime} strokeWidth={2.6} />
+          </Pressable>
+        </View>
+
+        {notes.length ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled
+            style={{ marginHorizontal: -20 }}
+            contentContainerStyle={styles.notesRow}
+          >
+            {notes.slice(0, 5).map((entry, index) => (
+              <View
+                key={entry.id}
+                style={[
+                  styles.note,
+                  { transform: [{ rotate: index % 2 ? '1.2deg' : '-1.5deg' }] },
+                ]}
+              >
+                {index === 0 ? <Grad colors={['#12344A', '#0E1A30']} angle={160} radius={20} /> : null}
+                <Text style={styles.noteText}>
+                  {entry.text}
+                </Text>
+                <Text style={[TYPE.label, { fontSize: 11, color: index === 0 ? COLORS.cyanText : COLORS.text3 }]}>
+                  {entry.at}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        ) : (
+          <Text style={TYPE.caption}>Noch keine Notizen gespeichert.</Text>
+        )}
       </Card>
 
-      <Card variant="blue">
-        <Title small>Streak & Judge</Title>
+      <Card>
+        <View style={styles.headRow}>
+          <Title>Streak &amp; Judge</Title>
+          <Tag label="1–10" tone="pink" />
+        </View>
 
-        <Text style={styles.big}>
-          {stats.streak || 0} Tage
-        </Text>
-
-        <Button
-          title="Beweis wählen"
-          tone="ice"
-          onPress={selectProof}
-        />
+        <View style={styles.row}>
+          <View style={styles.proofSlot}>
+            {coachImage ? (
+              <Image source={{ uri: coachImage.uri }} style={StyleSheet.absoluteFill} />
+            ) : (
+              <>
+                <AppIcon name="camera" size={28} color={COLORS.text3} />
+                <Text style={TYPE.label}>
+                  {proof ? (proof.type === 'video' ? 'Video gewählt' : 'Beweis gewählt') : 'Beweis-Foto'}
+                </Text>
+              </>
+            )}
+          </View>
+          <ProgressRing size={118} stroke={12} progress={0} color={COLORS.pink} inner="#0B1221">
+            <Text style={[TYPE.number, { fontSize: 34 }]}>{stats.streak || 0}</Text>
+            <Text style={[TYPE.label, { fontSize: 11 }]}>Tage</Text>
+          </ProgressRing>
+        </View>
 
         {proof ? (
-          <Muted>
+          <Text style={TYPE.caption}>
             {proof.type === 'video'
               ? 'Video zählt als Streak-Beweis. Für die aktuelle KI-Bewertung wird noch ein Foto verwendet.'
               : 'Foto gewählt – der Beweis wird nicht dauerhaft gespeichert.'}
-          </Muted>
+          </Text>
         ) : null}
 
-        <Button
-          title="Foto judgen"
-          tone="pink"
-          disabled={
-            !coachImage || coachBusy
-          }
-          onPress={() => runCoach(true)}
-        />
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <SecondaryButton
+              title="Beweis wählen"
+              tone="cyan"
+              icon="camera"
+              onPress={selectProof}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <SecondaryButton
+              title="Foto judgen"
+              tone="pink"
+              icon="target"
+              disabled={
+                !coachImage || coachBusy
+              }
+              onPress={() => runCoach(true)}
+            />
+          </View>
+        </View>
 
         {judge ? (
-          <Text style={styles.answer}>
-            {judge}
-          </Text>
+          <Bubble tone="cyan" style={{ alignSelf: 'stretch' }}>
+            <Text style={styles.answer}>
+              {judge}
+            </Text>
+          </Bubble>
         ) : null}
       </Card>
     </View>
@@ -595,103 +637,127 @@ export default function CoachTab({ sport, stats, setStats, connection = null }) 
 
 const styles = StyleSheet.create({
   stack: {
+    gap: 14,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
-  next: {
-    fontSize: 28,
-    fontWeight: '900',
-    fontStyle: 'italic',
-    letterSpacing: -0.8,
-  },
-  cardHeader: {
+  headRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 9,
-  },
-  numberBadge: {
-    width: 36,
-    height: 28,
-    borderWidth: 1,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#09131D',
-  },
-  numberBadgeText: {
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  rowWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 7,
-  },
-  big: {
-    color: COLORS.text,
-    fontSize: 23,
-    fontWeight: '900',
-    letterSpacing: -0.3,
-  },
-  miniBig: {
-    color: COLORS.text,
-    fontSize: 19,
-    fontWeight: '900',
-  },
-  text: {
-    color: COLORS.text,
-    fontSize: 14.5,
-    lineHeight: 21,
-  },
-  timer: {
-    color: COLORS.volt,
-    fontSize: 48,
-    fontWeight: '900',
-    fontVariant: ['tabular-nums'],
-    letterSpacing: -1,
-  },
-  countdown: {
-    color: COLORS.pink,
-    fontSize: 38,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 99,
-  },
-  twoCol: {
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 10,
   },
-  col: {
+  posterTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  posterLabel: {
+    marginTop: 22,
+    color: COLORS.cyanText,
+  },
+  posterTitle: {
+    ...TYPE.display,
+    fontSize: 70,
+    lineHeight: 66,
+    marginTop: 10,
+  },
+  posterText: {
+    ...TYPE.body,
+    color: '#CCD6E4',
+    marginTop: 14,
+  },
+  safetyWell: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 18,
+    backgroundColor: 'rgba(3,5,10,0.45)',
+  },
+  posterFoot: {
+    marginTop: 14,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 10,
+  },
+  bento: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  bentoCard: {
     flex: 1,
+    padding: 16,
+    gap: 12,
   },
-  note: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.line,
-    paddingTop: 10,
+  bentoValue: {
+    ...TYPE.head,
+    fontSize: 20,
+    lineHeight: 23,
+  },
+  tileResult: {
+    ...TYPE.display,
+    fontSize: 36,
+    lineHeight: 36,
+    minHeight: 36,
   },
   preview: {
-    width: '100%',
-    height: 220,
+    width: 96,
+    height: 96,
     borderRadius: 18,
-    resizeMode: 'cover',
   },
   answer: {
+    fontFamily: FONTS.body,
+    color: '#DDE3EE',
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  roundAction: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: COLORS.lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notesRow: {
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+  },
+  note: {
+    width: 190,
+    padding: 14,
+    borderRadius: 20,
+    backgroundColor: COLORS.tile,
+    gap: 10,
+  },
+  noteText: {
+    fontFamily: FONTS.medium,
     color: COLORS.text,
-    fontSize: 14.5,
-    lineHeight: 22,
-    backgroundColor: '#09131D',
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
+    fontSize: 14,
+    lineHeight: 19.5,
+  },
+  proofSlot: {
+    flex: 1,
+    height: 118,
+    borderRadius: 22,
+    backgroundColor: COLORS.well,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    overflow: 'hidden',
   },
 });

@@ -1,8 +1,10 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { Card, Button, Muted, Notice, Title } from '../components/UI';
-import { COLORS } from '../theme';
-import PageHero from '../components/PageHero';
+import { COLORS, FONTS, GRADIENTS, RADII, TYPE } from '../theme';
+import AppIcon from '../components/AppIcon';
+import { IconTile, PosterCard, SecondaryButton, Sticker, Surface, Tag } from '../design/kit';
 import { effectiveLevels, effectiveSlots, nextRecommendedSkill } from '../services/skills';
 import { localGet, localSet, sharedGet, sharedSet } from '../storage';
 import { askAI } from '../services/ai';
@@ -284,103 +286,459 @@ export default function SkillsTab({ sport, profile, stats, setStats }) {
     setNotice(`Reset fertig: ${resetPreview.length} geschaffte Tricks wurden durch neue Ziele ersetzt. Deine Punkte bleiben erhalten.`);
   };
 
+  // Night Ride v2 – reine Anzeige-Zustände (kein Speichern)
+  const [shownLevel, setShownLevel] = useState(null);
+  const [lineWidth, setLineWidth] = useState(0);
+
+  const activeLevel =
+    shownLevel && levels.some(([level]) => level === shownLevel)
+      ? shownLevel
+      : next?.level || levels[0]?.[0];
+  const activeItems = (levels.find(([level]) => level === activeLevel) || [null, []])[1];
+  const activeDone = activeItems.filter((x) => done[x.name]).length;
+
+  const PITCH = 84;
+  const XS = [0.18, 0.5, 0.82, 0.5];
+  const points = activeItems.map((item, i) => ({
+    item,
+    x: lineWidth * XS[i % XS.length],
+    y: 44 + i * PITCH,
+  }));
+  const lineHeight = activeItems.length ? 44 + (activeItems.length - 1) * PITCH + 70 : 0;
+  const pathFor = (pts) =>
+    pts.reduce((d, p, i) => {
+      if (i === 0) return `M${p.x} ${p.y}`;
+      const prev = pts[i - 1];
+      const midY = (prev.y + p.y) / 2;
+      return `${d} C${prev.x} ${midY} ${p.x} ${midY} ${p.x} ${p.y}`;
+    }, '');
+  let lastDoneIndex = -1;
+  points.forEach((p, i) => {
+    if (done[p.item.name]) lastDoneIndex = i;
+  });
+
   return (
     <View style={styles.stack}>
-      <PageHero
-        type="skills"
-        title="Skills"
-        subtitle="SKILL-BAUM · WOCHENZIEL · PLAN"
-        accent={sport.color}
-      />
       {notice ? <Notice>{notice}</Notice> : null}
 
-      <Card style={{ borderColor: `${sport.color}55` }}>
-        <Title color={sport.color}>Dein nächster Schritt</Title>
-        {next ? <Text style={styles.nextSkill}>{next.name}</Text> : <Text style={styles.nextSkill}>Skill-Baum komplett</Text>}
-        <Muted>{completedCount} von {slots.length} aktuellen Skills geschafft · Punkte bleiben dauerhaft erhalten.</Muted>
-      </Card>
+      <PosterCard gradient={GRADIENTS.skills} glow="rgba(207,255,58,0.3)" watermark={`L${Math.max(1, levels.findIndex(([l]) => l === (next?.level || '')) + 1)}`}>
+        <Sticker label="Dein nächster Schritt" tone="white" />
+        <Text style={styles.posterTitle} numberOfLines={2} adjustsFontSizeToFit>
+          {next ? next.name : 'Skill-Baum komplett'}
+        </Text>
+        <View style={styles.countRow}>
+          <Text style={[TYPE.number, { fontSize: 40, color: COLORS.lime }]}>{completedCount}</Text>
+          <Text style={[TYPE.number, { fontSize: 24, color: '#6B7A4A' }]}>/ {slots.length}</Text>
+          <Text style={[TYPE.label, { color: '#C9D6A8', marginLeft: 6 }]}>Skills geschafft</Text>
+        </View>
+        <View style={styles.levelBars}>
+          {levels.map(([level, items]) => {
+            const d = items.filter((x) => done[x.name]).length;
+            const p = items.length ? d / items.length : 0;
+            return (
+              <View key={level} style={[styles.levelBar, { flex: items.length || 1 }]}>
+                <View style={[styles.levelBarFill, { width: `${Math.round(p * 100)}%` }]} />
+              </View>
+            );
+          })}
+        </View>
+        <Text style={[TYPE.caption, { marginTop: 14, color: '#A4AF8C' }]}>
+          Punkte bleiben dauerhaft erhalten.
+        </Text>
+      </PosterCard>
 
-      <Card>
-        <Title color={sport.color}>Skill-Baum</Title>
-        <Muted>Die Reihenfolge ist bewusst schrittweise. Ein Flip steht nicht direkt hinter einem einfachen Grundlagen-Trick.</Muted>
-        {levels.map(([level, items]) => (
-          <View key={level} style={styles.level}>
-            <Text style={[styles.levelTitle, { color: sport.color }]}>{level}</Text>
-            {items.map((item) => (
-              <View key={item.slotId}>
-                <Pressable onPress={() => toggle(item.name)} style={styles.skill}>
-                  <Text style={[styles.check, done[item.name] && { color: sport.color }]}>{done[item.name] ? '✓' : '○'}</Text>
-                  <Text style={styles.skillName}>{item.name}</Text>
-                  <Pressable onPress={(e) => { e.stopPropagation?.(); lookup(item.name); }} hitSlop={8}><Text style={styles.info}>INFO</Text></Pressable>
-                </Pressable>
-                {open === item.name ? (
-                  <View style={styles.lex}>
-                    <Text style={styles.body}>{lex}</Text>
-                    <Button title="Als Wochenziel" compact tone="dark" onPress={() => setWeekly(item.name)} />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        nestedScrollEnabled
+        style={{ marginRight: -18 }}
+        contentContainerStyle={styles.levelRow}
+      >
+        {levels.map(([level, items], index) => {
+          const d = items.filter((x) => done[x.name]).length;
+          const on = level === activeLevel;
+          const complete = items.length > 0 && d === items.length;
+          return (
+            <Pressable
+              key={level}
+              onPress={() => setShownLevel(level)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              style={[styles.levelCard, on && styles.levelCardOn]}
+            >
+              <View style={styles.headRow}>
+                <Text style={[TYPE.number, { fontSize: 22, color: on ? COLORS.onLime : complete ? COLORS.lime : COLORS.mutedNum }]}>
+                  {String(index + 1).padStart(2, '0')}
+                </Text>
+                {complete && !on ? (
+                  <View style={styles.levelCheck}>
+                    <AppIcon name="check" size={12} color={COLORS.onLime} strokeWidth={3.2} />
                   </View>
                 ) : null}
               </View>
-            ))}
-          </View>
-        ))}
-      </Card>
-
-      <Card>
-        <Title small>Ziel der Woche</Title>
-        {goal ? <Text style={styles.goal}>{goal.done ? '✓ ' : ''}{goal.name}</Text> : <Muted>Öffne bei einem Trick „INFO“ und setze ihn als Wochenziel.</Muted>}
-      </Card>
-
-      <Card>
-        <Title small>Skill-Reset</Title>
-        <Muted>Ein Reset ersetzt alle aktuell als geschafft markierten Tricks dieses Sports. Vorher siehst du genau, was ersetzt wird. Punkte gehen nicht verloren.</Muted>
-        <Text style={styles.resetCounter}>{resetCount} / 20 Resets diesen Monat</Text>
-        {!resetPreview ? (
-          <Button title={resetBusy ? 'Bereite Reset vor…' : 'Reset-Vorschau erstellen'} tone="pink" disabled={resetBusy} onPress={prepareReset} />
-        ) : (
-          <View style={styles.previewBox}>
-            <Text style={styles.previewTitle}>Vorschau</Text>
-            {resetPreview.map((item) => (
-              <View key={item.slotId} style={styles.previewRow}>
-                <Text style={styles.previewOld}>{item.oldName}</Text>
-                <Text style={styles.previewArrow}>→</Text>
-                <Text style={[styles.previewNew, { color: item.newName ? sport.color : COLORS.danger }]}>{item.newName || 'kein Ersatz gefunden'}</Text>
+              <View style={{ gap: 3 }}>
+                <Text style={[styles.levelName, on && { color: COLORS.onLime }]} numberOfLines={1}>{level}</Text>
+                <Text style={[TYPE.label, { fontSize: 11 }, on && { color: '#3A4660' }]}>
+                  {d} / {items.length}{on && level === next?.level ? ' · aktuell' : ''}
+                </Text>
               </View>
-            ))}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      <Card>
+        <View style={styles.headRow}>
+          <Title>Die Line · {activeLevel}</Title>
+          <Tag label={`${activeDone} / ${activeItems.length}`} tone="lime" />
+        </View>
+        <Muted>Die Reihenfolge ist bewusst schrittweise. Ein Flip steht nicht direkt hinter einem einfachen Grundlagen-Trick. Tippe einen Trick für Info, Haken und Wochenziel.</Muted>
+
+        <View
+          style={{ height: lineHeight }}
+          onLayout={(e) => setLineWidth(e.nativeEvent.layout.width)}
+        >
+          {lineWidth ? (
+            <>
+              <Svg width={lineWidth} height={lineHeight} style={StyleSheet.absoluteFill}>
+                <Path d={pathFor(points)} stroke={COLORS.road} strokeWidth={30} strokeLinecap="round" fill="none" />
+                {lastDoneIndex > 0 ? (
+                  <Path
+                    d={pathFor(points.slice(0, lastDoneIndex + 1))}
+                    stroke={COLORS.lime}
+                    strokeOpacity={0.22}
+                    strokeWidth={30}
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                ) : null}
+              </Svg>
+
+              {points.map(({ item, x, y }, i) => {
+                const isDone = !!done[item.name];
+                const isOpen = open === item.name;
+                const isNext = next?.name === item.name;
+                const big = isOpen || (isNext && !open);
+                const size = big && !isDone ? 70 : 58;
+                return (
+                  <React.Fragment key={item.slotId}>
+                    <Pressable
+                      onPress={() => lookup(item.name)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${item.name}${isDone ? ', geschafft' : ''}`}
+                      style={[
+                        styles.node,
+                        {
+                          left: x - size / 2,
+                          top: y - size / 2,
+                          width: size,
+                          height: size,
+                          borderRadius: size / 2,
+                        },
+                        isDone ? styles.nodeDone : big ? styles.nodeNext : styles.nodeTodo,
+                        isDone && isOpen ? styles.nodeRing : null,
+                      ]}
+                    >
+                      {isDone ? (
+                        <AppIcon name="check" size={24} color={COLORS.onLime} strokeWidth={3} />
+                      ) : big ? (
+                        <AppIcon name="play" size={24} color={COLORS.onLime} fillOpacity={1} />
+                      ) : (
+                        <Text style={[TYPE.number, { fontSize: 20, color: '#5E6A84' }]}>{i + 1}</Text>
+                      )}
+                    </Pressable>
+                    <Text
+                      numberOfLines={2}
+                      style={[
+                        styles.nodeLabel,
+                        { left: Math.max(0, Math.min(lineWidth - 130, x - 65)), top: y + (size / 2) + 6 },
+                        big && !isDone ? { color: COLORS.text, fontFamily: FONTS.bold, fontSize: 14.5 } : null,
+                        isDone ? { color: '#C9D1DE' } : null,
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
+                  </React.Fragment>
+                );
+              })}
+            </>
+          ) : null}
+        </View>
+
+        {open ? (
+          <View style={styles.detail}>
+            <View style={styles.headRow}>
+              <Text style={[TYPE.head, { fontSize: 20, flex: 1 }]} numberOfLines={2}>{open}</Text>
+              <Tag label="KI-Lexikon" tone="cyan" icon="chip" />
+            </View>
+            {lex === 'Lädt…' ? (
+              <View style={styles.row}>
+                <ActivityIndicator color={COLORS.cyan} size="small" />
+                <Text style={[TYPE.caption, { color: COLORS.cyanText }]}>Lädt…</Text>
+              </View>
+            ) : (
+              <Text style={styles.body}>{lex}</Text>
+            )}
             <View style={styles.row}>
-              <Button title="Abbrechen" tone="dark" onPress={() => setResetPreview(null)} />
-              <Button title="Reset durchführen" tone="pink" onPress={applyReset} disabled={resetPreview.some((x) => !x.newName)} />
+              <View style={{ flex: 1 }}>
+                {done[open] ? (
+                  <SecondaryButton title="Als offen markieren" icon="reset" onPress={() => toggle(open)} />
+                ) : (
+                  <Button title="Geschafft" icon="check" compact onPress={() => toggle(open)} />
+                )}
+              </View>
+              <SecondaryButton title="Als Wochenziel" icon="target" onPress={() => setWeekly(open)} />
             </View>
           </View>
-        )}
+        ) : null}
       </Card>
 
+      <View style={styles.bento}>
+        <Surface radius={RADII.cardSm} gradient={GRADIENTS.tileLime} style={styles.bentoCard}>
+          <IconTile name="target" size={50} iconSize={24} bg={COLORS.lime} color="#0B1404" radius={16} fillOpacity={0.35} />
+          <Text style={TYPE.label}>Ziel der Woche</Text>
+          {goal ? (
+            <Text style={styles.bentoValue} numberOfLines={2}>{goal.name || goal}</Text>
+          ) : (
+            <Text style={TYPE.caption}>Öffne einen Trick und setze ihn als Wochenziel.</Text>
+          )}
+          {goal?.done ? (
+            <Tag label="Geschafft" tone="solidLime" icon="check" />
+          ) : (
+            <Tag label="Crew sieht es" tone="glass" icon="crew" />
+          )}
+        </Surface>
+
+        <Surface radius={RADII.cardSm} style={styles.bentoCard}>
+          <View style={styles.countRowSmall}>
+            <Text style={[TYPE.number, { fontSize: 48, color: COLORS.pinkText }]}>{resetCount}</Text>
+            <Text style={[TYPE.number, { fontSize: 22, color: COLORS.mutedNum }]}>/ 20</Text>
+          </View>
+          <Text style={TYPE.label}>Skill-Reset im Monat</Text>
+          <Text style={[TYPE.caption, { fontSize: 11.5 }]}>
+            Ersetzt alle geschafften Tricks dieses Sports. Vorher siehst du alles, Punkte gehen nicht verloren.
+          </Text>
+          {!resetPreview ? (
+            <SecondaryButton
+              title={resetBusy ? 'Bereite vor…' : 'Reset-Vorschau'}
+              tone="pink"
+              size="sm"
+              disabled={resetBusy}
+              onPress={prepareReset}
+            />
+          ) : null}
+        </Surface>
+      </View>
+
+      {resetPreview ? (
+        <Card>
+          <Title>Reset-Vorschau</Title>
+          {resetPreview.map((item) => (
+            <View key={item.slotId} style={styles.previewRow}>
+              <Text style={styles.previewOld} numberOfLines={2}>{item.oldName}</Text>
+              <AppIcon name="chevron" size={16} color={COLORS.text3} />
+              <Text style={[styles.previewNew, { color: item.newName ? COLORS.lime : COLORS.pinkText }]} numberOfLines={2}>
+                {item.newName || 'kein Ersatz gefunden'}
+              </Text>
+            </View>
+          ))}
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <SecondaryButton title="Abbrechen" onPress={() => setResetPreview(null)} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <SecondaryButton
+                title="Reset durchführen"
+                tone="danger"
+                onPress={applyReset}
+                disabled={resetPreview.some((x) => !x.newName)}
+              />
+            </View>
+          </View>
+        </Card>
+      ) : null}
+
       <Card>
-        <Title small>Wochen-Trainingsplan</Title>
-        {plan ? <Text style={styles.body}>{plan}</Text> : <Muted>Noch kein Plan für diese Woche gespeichert.</Muted>}
-        <Button title="Plan per KI erstellen" onPress={makePlan} />
+        <View style={styles.headRow}>
+          <Title>Wochen-Trainingsplan</Title>
+          <AppIcon name="calendar" size={20} color={COLORS.text3} />
+        </View>
+        {plan ? (
+          <View style={styles.planWell}>
+            <Text style={styles.body}>{plan}</Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.planSlots}>
+              {[1, 2, 3].map((n) => (
+                <View key={n} style={styles.planSlot}>
+                  <Text style={[TYPE.display, { fontSize: 38, lineHeight: 40, color: '#2C3858' }]}>{n}</Text>
+                  <Text style={[TYPE.label, { fontSize: 11 }]}>Session</Text>
+                </View>
+              ))}
+            </View>
+            <Muted>Noch kein Plan für diese Woche gespeichert.</Muted>
+          </>
+        )}
+        <Button title="Plan per KI erstellen" icon="chip" onPress={makePlan} />
       </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  stack: { gap: 12 },
-  nextSkill: { color: COLORS.text, fontSize: 25, fontWeight: '900' },
-  level: { gap: 3 },
-  levelTitle: { fontSize: 19, fontWeight: '900', marginTop: 8 },
-  skill: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: 1, borderBottomColor: COLORS.line },
-  check: { fontSize: 28, color: COLORS.muted, width: 30 },
-  skillName: { color: COLORS.text, fontSize: 15, fontWeight: '700', flex: 1 },
-  info: { color: COLORS.ice, fontWeight: '900', fontSize: 12 },
-  lex: { backgroundColor: COLORS.panel2, padding: 12, borderRadius: 15, gap: 10 },
-  body: { color: COLORS.text, lineHeight: 21 },
-  goal: { color: COLORS.volt, fontSize: 20, fontWeight: '900' },
-  resetCounter: { color: COLORS.text, fontWeight: '900', fontSize: 16 },
-  previewBox: { gap: 8, backgroundColor: COLORS.bgSoft, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: COLORS.line },
-  previewTitle: { color: COLORS.text, fontSize: 17, fontWeight: '900' },
-  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: COLORS.line },
-  previewOld: { color: COLORS.muted, flex: 1, fontSize: 13 },
-  previewArrow: { color: COLORS.text, fontWeight: '900' },
-  previewNew: { flex: 1, fontSize: 13, fontWeight: '800' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  stack: { gap: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  posterTitle: {
+    ...TYPE.display,
+    fontSize: 70,
+    lineHeight: 66,
+    marginTop: 22,
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    marginTop: 18,
+  },
+  countRowSmall: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+    height: 50,
+  },
+  levelBars: {
+    flexDirection: 'row',
+    gap: 5,
+    marginTop: 12,
+  },
+  levelBar: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+  },
+  levelBarFill: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.lime,
+  },
+  levelRow: {
+    gap: 10,
+    paddingRight: 18,
+  },
+  levelCard: {
+    width: 128,
+    height: 92,
+    borderRadius: RADII.tile,
+    backgroundColor: COLORS.cardTop,
+    padding: 14,
+    justifyContent: 'space-between',
+  },
+  levelCardOn: {
+    backgroundColor: COLORS.text,
+    boxShadow: '0 16px 30px -16px rgba(244,246,251,0.5)',
+  },
+  levelCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: COLORS.lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  levelName: {
+    ...TYPE.head,
+    fontSize: 15,
+    lineHeight: 18,
+  },
+  node: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nodeDone: {
+    backgroundColor: COLORS.lime,
+    boxShadow: '0 10px 24px -10px rgba(207,255,58,0.7)',
+  },
+  nodeNext: {
+    backgroundColor: COLORS.text,
+    boxShadow: '0 0 0 9px rgba(207,255,58,0.2), 0 0 50px rgba(207,255,58,0.45)',
+  },
+  nodeTodo: {
+    backgroundColor: COLORS.nodeIdle,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+  },
+  nodeRing: {
+    boxShadow: '0 0 0 4px #F4F6FB',
+  },
+  nodeLabel: {
+    position: 'absolute',
+    width: 130,
+    textAlign: 'center',
+    fontFamily: FONTS.semibold,
+    fontSize: 13,
+    lineHeight: 16,
+    color: COLORS.text3,
+  },
+  detail: {
+    padding: 18,
+    borderRadius: RADII.tile,
+    backgroundColor: COLORS.well,
+    gap: 12,
+  },
+  body: {
+    fontFamily: FONTS.body,
+    color: '#C9D1DE',
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  bento: { flexDirection: 'row', gap: 12 },
+  bentoCard: {
+    flex: 1,
+    padding: 16,
+    gap: 12,
+  },
+  bentoValue: {
+    ...TYPE.head,
+    fontSize: 21,
+    lineHeight: 24,
+  },
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: COLORS.tile,
+  },
+  previewOld: {
+    flex: 1,
+    fontFamily: FONTS.medium,
+    color: COLORS.text3,
+    fontSize: 13.5,
+  },
+  previewNew: {
+    flex: 1,
+    fontFamily: FONTS.bold,
+    fontSize: 13.5,
+  },
+  planWell: {
+    padding: 16,
+    borderRadius: RADII.tile,
+    backgroundColor: COLORS.well,
+  },
+  planSlots: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  planSlot: {
+    flex: 1,
+    height: 92,
+    borderRadius: RADII.stat,
+    backgroundColor: COLORS.tile,
+    padding: 12,
+    justifyContent: 'space-between',
+  },
 });

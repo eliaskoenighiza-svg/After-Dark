@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import AppIcon from '../components/AppIcon';
+import { Grad } from '../design/Grad';
+import { PolaroidArt } from '../design/art';
+import { SecondaryButton, Segmented, Tag } from '../design/kit';
 import { Card, Button, Muted, Notice, Pill, Title } from '../components/UI';
-import { COLORS } from '../theme';
+import { COLORS, FONTS, RADII, SHADOWS } from '../theme';
 import { localGet, localSet, sharedGet, sharedSet } from '../storage';
 import { pickAndResizeImage, persistImage } from '../services/media';
 import {
@@ -229,28 +233,25 @@ export default function MemoriesTab({ profile }) {
       {notice ? <Notice tone="pink">{notice}</Notice> : null}
 
       <Card>
-        <Title>Memories</Title>
-
+        <Segmented
+          items={[
+            { key: 'private', label: 'Privat' },
+            { key: 'crew', label: 'Crew' },
+          ]}
+          value={scope}
+          onChange={(next) => setScope(next)}
+        />
         <View style={styles.wrap}>
-          <Pill
-            label="Privat"
-            active={scope === 'private'}
-            onPress={() => setScope('private')}
-          />
-          <Pill
-            label="Crew"
-            active={scope === 'crew'}
-            onPress={() => setScope('crew')}
+          <Tag label={`${items.length} / ${max} Bilder`} tone="neutral" icon="memories" />
+          <Tag
+            label={cloudMode ? 'Cloud aktiv' : 'Lokaler Testmodus'}
+            tone={cloudMode ? 'cyan' : 'neutral'}
+            dot={cloudMode}
           />
         </View>
-
-        <Muted>
-          {cloudMode ? 'Cloud aktiv · ' : 'Lokaler Testmodus · '}
-          {items.length} / {max} Bilder
-        </Muted>
-
         <Button
           title={busy ? 'Bitte warten…' : 'Bild hinzufügen'}
+          icon="camera"
           disabled={busy}
           onPress={add}
         />
@@ -262,71 +263,83 @@ export default function MemoriesTab({ profile }) {
           const crown = isCloud
             ? Boolean(x.daily_crown)
             : localCrown === x.id;
-
           const by = isCloud
             ? x.nickname
             : x.by;
-
           const likes = isCloud
             ? Number(x.likes || 0)
             : Number(x.likes || 0);
-
           const likedByMe = isCloud
             ? Boolean(x.liked_by_me)
             : false;
-
           const mine = isCloud
             ? x.user_id === cloudUserId
             : by === profile.nickname;
-
           const imageUri = isCloud
             ? x.url
             : x.uri;
 
           return (
-            <View key={x.id} style={styles.tile}>
-              {imageUri ? (
-                <Image
-                  source={{ uri: imageUri }}
-                  style={styles.image}
-                />
-              ) : (
-                <View style={styles.imageFallback}>
-                  <Muted>Bild konnte nicht geladen werden.</Muted>
+            <View key={x.id} style={styles.tileWrap}>
+              <View style={[styles.tile, SHADOWS.card]}>
+                {imageUri ? (
+                  <Image
+                    source={{ uri: imageUri }}
+                    style={styles.image}
+                  />
+                ) : (
+                  <View style={styles.imageFallback}>
+                    <AppIcon name="memories" size={28} color={COLORS.text3} />
+                    <Muted style={{ textAlign: 'center' }}>Bild konnte nicht geladen werden.</Muted>
+                  </View>
+                )}
+
+                <View pointerEvents="none" style={styles.fade}>
+                  <Grad colors={['rgba(3,5,10,0)', 'rgba(3,5,10,0.88)']} angle={180} />
                 </View>
-              )}
 
-              <View style={styles.info}>
-                <Text style={styles.by}>
-                  {crown ? '♛ ' : ''}
-                  {by}
-                </Text>
-
-                {scope === 'crew' ? (
-                  <Pressable
-                    disabled={busy}
-                    onPress={() => like(x.id)}
-                    style={[
-                      styles.like,
-                      likedByMe && styles.likeActive,
-                    ]}
-                  >
-                    <Text style={styles.likeText}>
-                      Like {likes}
+                <View style={styles.info}>
+                  <View style={styles.byRow}>
+                    {crown ? <AppIcon name="crown" size={15} color={COLORS.lime} fillOpacity={0.6} /> : null}
+                    <Text style={styles.by} numberOfLines={1}>
+                      {by}
                     </Text>
-                  </Pressable>
-                ) : null}
+                  </View>
+
+                  {scope === 'crew' ? (
+                    <Pressable
+                      disabled={busy}
+                      onPress={() => like(x.id)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Like, ${likes}`}
+                      style={[
+                        styles.like,
+                        likedByMe && styles.likeActive,
+                      ]}
+                    >
+                      <AppIcon
+                        name="heart"
+                        size={14}
+                        color={likedByMe ? COLORS.pinkText : COLORS.text}
+                        fillOpacity={likedByMe ? 0.8 : 0.22}
+                      />
+                      <Text style={[styles.likeText, likedByMe && { color: COLORS.pinkText }]}>
+                        {likes}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
               </View>
 
               {isCloud && mine ? (
-                <View style={styles.deleteWrap}>
-                  <Button
-                    title="Mein Bild löschen"
-                    tone="dark"
-                    disabled={busy}
-                    onPress={() => remove(x.id)}
-                  />
-                </View>
+                <SecondaryButton
+                  title="Mein Bild löschen"
+                  tone="pink"
+                  size="sm"
+                  icon="trash"
+                  disabled={busy}
+                  onPress={() => remove(x.id)}
+                />
               ) : null}
             </View>
           );
@@ -335,7 +348,10 @@ export default function MemoriesTab({ profile }) {
 
       {!items.length ? (
         <Card>
-          <Muted>Noch keine Bilder.</Muted>
+          <View style={{ alignItems: 'center', gap: 10, paddingVertical: 10 }}>
+            <PolaroidArt />
+            <Muted>Noch keine Bilder.</Muted>
+          </View>
         </Card>
       ) : null}
     </View>
@@ -343,54 +359,79 @@ export default function MemoriesTab({ profile }) {
 }
 
 const styles = StyleSheet.create({
-  stack: { gap: 12 },
-  wrap: { flexDirection: 'row', gap: 8 },
-  grid: { gap: 10 },
+  stack: { gap: 14 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  tileWrap: {
+    width: '48.5%',
+    flexGrow: 1,
+    gap: 8,
+  },
   tile: {
-    backgroundColor: COLORS.panel,
-    borderRadius: 16,
+    aspectRatio: 1,
+    borderRadius: RADII.tile,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
+    backgroundColor: COLORS.tile,
   },
   image: {
     width: '100%',
-    height: 260,
-    resizeMode: 'cover',
+    height: '100%',
   },
   imageFallback: {
-    width: '100%',
-    height: 180,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    gap: 8,
+    padding: 12,
+  },
+  fade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 70,
   },
   info: {
-    padding: 10,
+    position: 'absolute',
+    left: 10,
+    right: 10,
+    bottom: 10,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  byRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flexShrink: 1,
   },
   by: {
+    fontFamily: FONTS.bold,
     color: COLORS.text,
-    fontWeight: '800',
+    fontSize: 13,
+    flexShrink: 1,
   },
   like: {
-    padding: 8,
-    backgroundColor: COLORS.panel2,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
+    height: 32,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    backgroundColor: COLORS.glass,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   likeActive: {
-    borderColor: COLORS.volt,
+    backgroundColor: COLORS.pinkSoft,
   },
   likeText: {
+    fontFamily: FONTS.bold,
     color: COLORS.text,
-    fontWeight: '800',
-  },
-  deleteWrap: {
-    paddingHorizontal: 10,
-    paddingBottom: 10,
+    fontSize: 12,
   },
 });

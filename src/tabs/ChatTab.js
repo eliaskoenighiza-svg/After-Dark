@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import AppIcon from '../components/AppIcon';
+import { Bubble, Tag } from '../design/kit';
 import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/UI';
-import { COLORS } from '../theme';
+import { COLORS, FONTS, TYPE } from '../theme';
 import { localGet, localSet, sharedGet, sharedSet } from '../storage';
 import {
   cloudConfigured,
@@ -300,20 +302,33 @@ export default function ChatTab({ profile }) {
   return (
     <View style={styles.stack}>
       <Card>
-        <Title>Chat</Title>
-        <Text style={styles.streak}>
-          Chat-Streak: {streak} Tag{streak === 1 ? '' : 'e'}
-        </Text>
-
+        <View style={styles.wrap}>
+          <Tag
+            label={`Chat-Streak: ${streak} Tag${streak === 1 ? '' : 'e'}`}
+            tone="lime"
+            icon="flame"
+          />
+          <Tag
+            label={cloudMode ? 'Crew-Cloud aktiv' : 'Lokaler Testmodus'}
+            tone={cloudMode ? 'cyan' : 'neutral'}
+            dot={cloudMode}
+          />
+        </View>
         <Muted>
           {cloudMode
-            ? 'Crew-Cloud aktiv · Nachrichten werden zwischen den Handys deiner Crew synchronisiert.'
-            : 'Lokaler Testmodus · keine aktive Cloud-Crew.'}
+            ? 'Nachrichten werden zwischen den Handys deiner Crew synchronisiert.'
+            : 'Keine aktive Cloud-Crew – Nachrichten bleiben auf diesem Gerät.'}
         </Muted>
 
         {notice ? <Notice tone="pink">{notice}</Notice> : null}
 
-        <View style={styles.wrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          nestedScrollEnabled
+          style={{ marginHorizontal: -20 }}
+          contentContainerStyle={styles.rooms}
+        >
           {rooms.map((r) => (
             <Pill
               key={r.id}
@@ -322,9 +337,9 @@ export default function ChatTab({ profile }) {
               onPress={() => selectRoom(r)}
             />
           ))}
-        </View>
+        </ScrollView>
 
-        <View style={styles.row}>
+        <View style={styles.inputRow}>
           <View style={{ flex: 1 }}>
             <Field
               value={newRoom}
@@ -332,16 +347,23 @@ export default function ChatTab({ profile }) {
               placeholder="Neuer Crew-Raum"
             />
           </View>
-          <Button
-            title="+"
-            disabled={busy || !newRoom.trim()}
+          <Pressable
             onPress={addRoom}
-          />
+            disabled={busy || !newRoom.trim()}
+            accessibilityRole="button"
+            accessibilityLabel="Raum hinzufügen"
+            style={[styles.roundAction, (busy || !newRoom.trim()) && styles.roundActionOff]}
+          >
+            <AppIcon name="plus" size={20} color={busy || !newRoom.trim() ? COLORS.text3 : COLORS.onLime} strokeWidth={2.6} />
+          </Pressable>
         </View>
       </Card>
 
       <Card>
-        <Title small>{roomName || 'Crew'}</Title>
+        <View style={styles.headRow}>
+          <Title>{roomName || 'Crew'}</Title>
+          <Text style={TYPE.label}>{messages.length} Nachrichten</Text>
+        </View>
 
         {messages.length ? (
           messages.map((m) => {
@@ -350,23 +372,28 @@ export default function ChatTab({ profile }) {
               : m.by === profile.nickname;
 
             return (
-              <View key={m.id} style={[styles.msg, mine && styles.mine]}>
-                <Text style={styles.meta}>
+              <View key={m.id} style={[styles.msgWrap, mine && styles.msgWrapMine]}>
+                <Text style={[styles.meta, mine && { textAlign: 'right' }]}>
                   {cloudMode ? m.nickname : m.by}
                   {' · '}
                   {cloudMode ? formatTime(m.created_at) : m.at}
                 </Text>
-                <Text style={styles.body}>
-                  {cloudMode ? m.message : m.text}
-                </Text>
+                <Bubble tone={mine ? 'violet' : 'raised'} mine={mine}>
+                  <Text style={styles.body}>
+                    {cloudMode ? m.message : m.text}
+                  </Text>
+                </Bubble>
 
                 {cloudMode && mine ? (
-                  <Button
-                    title="Löschen"
-                    tone="dark"
-                    disabled={busy}
+                  <Pressable
                     onPress={() => deleteMessage(m.id)}
-                  />
+                    disabled={busy}
+                    accessibilityRole="button"
+                    hitSlop={8}
+                    style={styles.deleteLink}
+                  >
+                    <Text style={styles.deleteText}>Löschen</Text>
+                  </Pressable>
                 ) : null}
               </View>
             );
@@ -375,51 +402,90 @@ export default function ChatTab({ profile }) {
           <Muted>Noch keine Nachrichten.</Muted>
         )}
 
-        <Field
-          value={text}
-          onChangeText={setText}
-          placeholder="Nachricht…"
-          multiline
-        />
-
-        <Button
-          title={busy ? 'Bitte warten…' : 'Senden'}
-          disabled={busy || !text.trim()}
-          onPress={send}
-        />
+        <View style={styles.composer}>
+          <View style={{ flex: 1 }}>
+            <Field
+              value={text}
+              onChangeText={setText}
+              placeholder="Nachricht…"
+              multiline
+              style={styles.composerInput}
+            />
+          </View>
+          <Pressable
+            onPress={send}
+            disabled={busy || !text.trim()}
+            accessibilityRole="button"
+            accessibilityLabel={busy ? 'Bitte warten…' : 'Senden'}
+            style={[styles.roundAction, (busy || !text.trim()) && styles.roundActionOff]}
+          >
+            <AppIcon name="send" size={20} color={busy || !text.trim() ? COLORS.text3 : COLORS.onLime} fillOpacity={0.35} />
+          </Pressable>
+        </View>
       </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  stack: { gap: 12 },
+  stack: { gap: 14 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  row: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  msg: {
-    backgroundColor: COLORS.panel2,
-    padding: 10,
-    borderRadius: 12,
-    alignSelf: 'stretch',
-    gap: 6,
+  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  rooms: {
+    gap: 8,
+    paddingHorizontal: 20,
   },
-  mine: {
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.volt,
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  roundAction: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: COLORS.lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roundActionOff: {
+    backgroundColor: COLORS.raised,
+  },
+  msgWrap: {
+    alignItems: 'flex-start',
+    maxWidth: '82%',
+    gap: 5,
+  },
+  msgWrapMine: {
+    alignSelf: 'flex-end',
+    alignItems: 'flex-end',
   },
   meta: {
-    color: COLORS.muted,
+    ...TYPE.label,
     fontSize: 11,
-    fontWeight: '800',
-  },
-  streak: {
-    color: COLORS.volt,
-    fontWeight: '900',
   },
   body: {
+    fontFamily: FONTS.body,
     color: COLORS.text,
-    fontSize: 15,
-    marginTop: 3,
+    fontSize: 14,
     lineHeight: 20,
+  },
+  deleteLink: {
+    paddingHorizontal: 4,
+  },
+  deleteText: {
+    fontFamily: FONTS.semibold,
+    fontSize: 12,
+    color: COLORS.pinkText,
+  },
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  composerInput: {
+    minHeight: 54,
+    borderRadius: 27,
+    paddingTop: 16,
   },
 });

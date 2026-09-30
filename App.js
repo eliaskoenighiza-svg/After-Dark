@@ -9,12 +9,36 @@ import {
   Text,
   View,
 } from 'react-native';
-import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import * as Font from 'expo-font';
 import Logo from './src/components/Logo';
 import AppIcon from './src/components/AppIcon';
 import SportIcon from './src/components/SportIcon';
-import { Button, Card, Field, Muted, Pill, StatBadge, Title } from './src/components/UI';
-import { COLORS } from './src/theme';
+import { Button, Card, Field, Muted, Title } from './src/components/UI';
+import { COLORS, FONT_FILES, FONTS, GRADIENTS, RADII, SHADOWS, TYPE } from './src/theme';
+import { Grad, Glow } from './src/design/Grad';
+import {
+  Avatar,
+  IconTile,
+  PosterCard,
+  PressSurface,
+  PrimaryButton,
+  ScreenPoster,
+  SecondaryButton,
+  Segmented,
+  StatCard,
+  Sticker,
+  Surface,
+  Tag,
+} from './src/design/kit';
+import {
+  BubblesArt,
+  ChatArt,
+  MoonArt,
+  PolaroidArt,
+  SmallArt,
+  StairsArt,
+  TapeArt,
+} from './src/design/art';
 import { seasonForMonth, SPORT_BY_ID, sportsForSeason } from './src/data/sports';
 import { localGet, localSet } from './src/storage';
 import { pickAndResizeImage, persistImage } from './src/services/media';
@@ -49,21 +73,26 @@ const EMPTY_STATS = {
   trainingMinutes: 0,
 };
 
-function SeasonChip({ season }) {
-  const winter = season === 'winter';
+// Night Ride v2: Licht je Bereich (nur Darstellung)
+const TAB_GLOW = {
+  coach: COLORS.cyan,
+  skills: COLORS.lime,
+  battle: COLORS.pink,
+  parks: null,
+  more: COLORS.violet,
+};
 
-  return (
-    <View style={styles.seasonChip}>
-      <AppIcon
-        name={winter ? 'snow' : 'sun'}
-        size={14}
-        color={winter ? COLORS.ice : COLORS.warning}
-      />
-      <Text style={styles.seasonChipText}>
-        {winter ? 'Winter' : 'Sommer'}
-      </Text>
-    </View>
+function shade(hex, amount) {
+  const h = String(hex || '#CFFF3A').replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) =>
+    Math.max(0, Math.min(255, Math.round(amount > 0 ? c + (255 - c) * amount : c * (1 + amount))))
   );
+  return `#${ch.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function sportGradient(color) {
+  return { colors: [shade(color, 0.35), shade(color, -0.35)], angle: 145 };
 }
 
 function Onboarding({ onDone }) {
@@ -128,25 +157,22 @@ function Onboarding({ onDone }) {
         contentContainerStyle={styles.onboard}
         keyboardShouldPersistTaps="handled"
       >
+        <Glow color={COLORS.cyan} opacity={0.16} size={460} style={{ right: -160, top: -160 }} />
         <View style={styles.onboardTop}>
           <Logo centered />
-          <Text style={styles.onboardStep}>
-            Einrichtung {step} / 2
-          </Text>
+          <Tag label={`Einrichtung ${step} / 2`} tone="neutral" style={{ alignSelf: 'center' }} />
         </View>
 
         {step === 1 ? (
           <>
-            <Card style={styles.welcomeCard}>
-              <Text style={styles.welcomeKicker}>AFTER[DARK</Text>
-              <Text style={styles.welcomeTitle}>
-                Deine Crew. Deine Tricks.
-              </Text>
-              <Muted>
+            <PosterCard gradient={GRADIENTS.coach} glow="rgba(56,225,242,0.35)">
+              <Sticker label="Night Ride" tone="lime" />
+              <Text style={styles.welcomeTitle}>Deine Crew. Deine Tricks.</Text>
+              <Text style={styles.welcomeText}>
                 Richte dein Profil ein. Danach passt sich After[Dark
                 an deinen Sport und deinen aktuellen Stand an.
-              </Muted>
-            </Card>
+              </Text>
+            </PosterCard>
 
             <Card>
               <Title>Profil</Title>
@@ -176,13 +202,9 @@ function Onboarding({ onDone }) {
                   <AppIcon
                     name="sun"
                     size={18}
-                    color={
-                      season === 'summer'
-                        ? COLORS.volt
-                        : COLORS.muted
-                    }
+                    color={season === 'summer' ? COLORS.onLime : COLORS.text3}
                   />
-                  <Text style={styles.seasonChoiceText}>Sommer</Text>
+                  <Text style={[styles.seasonChoiceText, season === 'summer' && styles.seasonChoiceTextActive]}>Sommer</Text>
                 </Pressable>
 
                 <Pressable
@@ -195,13 +217,9 @@ function Onboarding({ onDone }) {
                   <AppIcon
                     name="snow"
                     size={18}
-                    color={
-                      season === 'winter'
-                        ? COLORS.ice
-                        : COLORS.muted
-                    }
+                    color={season === 'winter' ? COLORS.onLime : COLORS.text3}
                   />
-                  <Text style={styles.seasonChoiceText}>Winter</Text>
+                  <Text style={[styles.seasonChoiceText, season === 'winter' && styles.seasonChoiceTextActive]}>Winter</Text>
                 </Pressable>
               </View>
 
@@ -214,17 +232,20 @@ function Onboarding({ onDone }) {
                     onPress={() => chooseSport(s.id)}
                     style={[
                       styles.choice,
-                      sportId === s.id && {
-                        borderColor: s.color,
-                        backgroundColor: `${s.color}12`,
-                      },
+                      sportId === s.id && styles.choiceActive,
                     ]}
                   >
-                    <SportIcon id={s.id} color={s.color} />
+                    <SportIcon
+                      id={s.id}
+                      color={sportId === s.id ? COLORS.onLime : COLORS.text2}
+                      mono
+                      strokeWidth={2}
+                    />
                     <Text
+                      numberOfLines={1}
                       style={[
                         styles.choiceText,
-                        sportId === s.id && { color: s.color },
+                        sportId === s.id && styles.choiceTextActive,
                       ]}
                     >
                       {s.name}
@@ -242,9 +263,7 @@ function Onboarding({ onDone }) {
           </>
         ) : (
           <Card>
-            <Title color={sport.color}>
-              Was kannst du schon?
-            </Title>
+            <Title>Was kannst du schon?</Title>
 
             <Muted>
               Hake alles an, was du sicher kannst. Damit startet dein
@@ -253,14 +272,7 @@ function Onboarding({ onDone }) {
 
             {sport.levels.map(([level, names]) => (
               <View key={level} style={styles.assessLevel}>
-                <Text
-                  style={[
-                    styles.assessLevelTitle,
-                    { color: sport.color },
-                  ]}
-                >
-                  {level}
-                </Text>
+                <Text style={styles.assessLevelTitle}>{level}</Text>
 
                 {names.map((name) => (
                   <Pressable
@@ -268,20 +280,14 @@ function Onboarding({ onDone }) {
                     onPress={() => toggleKnown(name)}
                     style={[
                       styles.assessSkill,
-                      known[name] && {
-                        borderColor: `${sport.color}88`,
-                        backgroundColor: `${sport.color}10`,
-                      },
+                      known[name] && styles.assessSkillActive,
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.assessCheck,
-                        known[name] && { color: sport.color },
-                      ]}
-                    >
-                      {known[name] ? '✓' : '○'}
-                    </Text>
+                    <View style={[styles.assessCheck, known[name] && styles.assessCheckActive]}>
+                      {known[name] ? (
+                        <AppIcon name="check" size={14} color={COLORS.onLime} strokeWidth={3} />
+                      ) : null}
+                    </View>
                     <Text style={styles.assessText}>{name}</Text>
                   </Pressable>
                 ))}
@@ -294,14 +300,80 @@ function Onboarding({ onDone }) {
                 tone="dark"
                 onPress={() => setStep(1)}
               />
-              <Button
-                title="After[Dark starten"
-                onPress={finish}
-              />
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="After[Dark starten"
+                  icon="play"
+                  onPress={finish}
+                />
+              </View>
             </View>
           </Card>
         )}
       </ScrollView>
+    </View>
+  );
+}
+
+// Verbindungs-Kacheln (Mehr: immer offen, Coach: über die Status-Zeile)
+function ConnectionTiles({
+  aiStatus,
+  aiBusy,
+  onAICheck,
+  cloudStatus,
+  cloudBusy,
+  onCloudCheck,
+}) {
+  const aiOnline = aiStatus.state === 'online';
+  const cloudOnline = cloudStatus.state === 'online';
+
+  return (
+    <View style={styles.connGrid}>
+      <View style={styles.connTile}>
+        <View style={styles.connTileTop}>
+          <IconTile name="chip" size={42} iconSize={20} gradient={GRADIENTS.avatarCyan} color="#04202A" radius={14} />
+          <View style={[styles.connDot, { backgroundColor: aiOnline ? COLORS.lime : COLORS.pink, boxShadow: `0 0 12px ${aiOnline ? COLORS.lime : COLORS.pink}` }]} />
+        </View>
+        <View style={{ gap: 4 }}>
+          <Text style={styles.connName}>KI</Text>
+          <Text style={styles.connSub} numberOfLines={3}>
+            {aiOnline
+              ? 'Cloudflare-KI · verbunden'
+              : (aiStatus.error || 'Cloudflare-KI nicht erreichbar')}
+          </Text>
+        </View>
+        <SecondaryButton
+          title={aiBusy ? '…' : 'Prüfen'}
+          tone="glass"
+          size="sm"
+          disabled={aiBusy}
+          onPress={onAICheck}
+        />
+      </View>
+
+      <View style={styles.connTile}>
+        <View style={styles.connTileTop}>
+          <IconTile name="cloud" size={42} iconSize={20} gradient={GRADIENTS.avatarViolet} color="#140C3A" radius={14} />
+          <View style={[styles.connDot, { backgroundColor: cloudOnline ? COLORS.lime : COLORS.pink, boxShadow: `0 0 12px ${cloudOnline ? COLORS.lime : COLORS.pink}` }]} />
+        </View>
+        <View style={{ gap: 4 }}>
+          <Text style={styles.connName}>Crew-Cloud</Text>
+          <Text style={styles.connSub} numberOfLines={3}>
+            {cloudOnline
+              ? 'Supabase · angemeldet'
+              : cloudConfigured()
+                ? (cloudStatus.error || 'Noch nicht verbunden.')
+                : 'Supabase-Zugangsdaten fehlen.'}
+          </Text>
+        </View>
+        <SecondaryButton
+          title={cloudBusy ? '…' : 'Prüfen'}
+          tone="glass"
+          size="sm"
+          disabled={cloudBusy || !cloudConfigured()}
+          onPress={onCloudCheck}
+        />
+      </View>
     </View>
   );
 }
@@ -320,264 +392,45 @@ function ConnectionCard({
   const cloudOnline = cloudStatus.state === 'online';
 
   return (
-    <View style={styles.connectionCard}>
+    <View style={{ gap: 12 }}>
       <Pressable
         onPress={onToggle}
-        style={styles.connectionHeader}
+        accessibilityRole="button"
+        accessibilityLabel="Verbindungen öffnen oder schließen"
+        style={styles.statusRow}
       >
-        <View style={styles.connectionIcon}>
-          <AppIcon
-            name="cloud"
-            size={25}
-            color={COLORS.ice}
-          />
-        </View>
-
-        <View style={styles.connectionText}>
-          <Text style={styles.connectionTitle}>
-            Verbindungen
-          </Text>
-          <Text style={styles.connectionSub}>
-            KI {aiOnline ? 'online' : 'offline'}
-            {'  ·  '}
-            Cloud {cloudOnline ? 'online' : 'offline'}
-          </Text>
-        </View>
-
-        <View style={styles.openButton}>
-          <Text style={styles.openButtonText}>
-            {open ? 'Schließen' : 'Öffnen'}
-          </Text>
-          <AppIcon
-            name="chevron"
-            size={15}
-            color={COLORS.ice}
-          />
+        <Tag label={aiOnline ? 'KI online' : 'KI offline'} tone={aiOnline ? 'lime' : 'pink'} dot big />
+        <Tag label={cloudOnline ? 'Cloud online' : 'Cloud offline'} tone={cloudOnline ? 'lime' : 'pink'} dot big />
+        <View style={styles.statusLink}>
+          <Text style={styles.statusLinkText}>Verbindungen</Text>
+          <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
+            <AppIcon name="chevron" size={14} color={COLORS.text3} />
+          </View>
         </View>
       </Pressable>
 
       {open ? (
-        <View style={styles.connectionStack}>
-          <View style={styles.connectionRow}>
-            <View
-              style={[
-                styles.statusDot,
-                {
-                  backgroundColor: aiOnline
-                    ? COLORS.success
-                    : COLORS.pink,
-                },
-              ]}
-            />
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.statusName}>Claude KI</Text>
-              <Muted>
-                {aiOnline
-                  ? `Verbunden${aiStatus.model ? ` · ${aiStatus.model}` : ''}`
-                  : 'Noch über lokalen PC-Proxy.'}
-              </Muted>
-            </View>
-
-            <Button
-              title={aiBusy ? '…' : 'Prüfen'}
-              compact
-              tone="dark"
-              disabled={aiBusy}
-              onPress={onAICheck}
-            />
-          </View>
-
-          <View style={styles.connectionRow}>
-            <View
-              style={[
-                styles.statusDot,
-                {
-                  backgroundColor: cloudOnline
-                    ? COLORS.success
-                    : COLORS.warning,
-                },
-              ]}
-            />
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.statusName}>
-                Supabase Crew-Cloud
-              </Text>
-              <Muted>
-                {cloudOnline
-                  ? 'Anonyme Anmeldung funktioniert.'
-                  : cloudConfigured()
-                    ? (cloudStatus.error || 'Noch nicht verbunden.')
-                    : 'Supabase-Zugangsdaten fehlen.'}
-              </Muted>
-            </View>
-
-            <Button
-              title={cloudBusy ? '…' : 'Prüfen'}
-              compact
-              tone="dark"
-              disabled={cloudBusy || !cloudConfigured()}
-              onPress={onCloudCheck}
-            />
-          </View>
-        </View>
+        <Card>
+          <ConnectionTiles
+            aiStatus={aiStatus}
+            aiBusy={aiBusy}
+            onAICheck={onAICheck}
+            cloudStatus={cloudStatus}
+            cloudBusy={cloudBusy}
+            onCloudCheck={onCloudCheck}
+          />
+        </Card>
       ) : null}
     </View>
   );
 }
 
-const TILE_ICONS = {
-  crew: 'crew',
-  chat: 'chat',
-  memories: 'memories',
-};
-
-const TILE_SUBS = {
-  crew: 'Deine Leute',
-  chat: 'Immer in Kontakt',
-  memories: 'Deine Highlights',
-};
-
-const TILE_THEME = {
-  crew: {
-    accent: COLORS.ice,
-    accent2: '#1B88A8',
-    background: '#071722',
-    border: '#23516A',
-    code: '01',
-  },
-  chat: {
-    accent: COLORS.pink,
-    accent2: COLORS.purple,
-    background: '#150A17',
-    border: '#54304F',
-    code: '02',
-  },
-  memories: {
-    accent: '#72C9FF',
-    accent2: '#3C7DFF',
-    background: '#081422',
-    border: '#2A4D6C',
-    code: '03',
-  },
-};
-
-function MoreTileArt({ id, theme }) {
-  if (id === 'crew') {
-    return (
-      <View style={styles.tileArt}>
-        <View style={[styles.crewOrbit, { borderColor: `${theme.accent}55` }]} />
-        <View style={[styles.crewDot, styles.crewDotOne, { backgroundColor: theme.accent }]} />
-        <View style={[styles.crewDot, styles.crewDotTwo, { backgroundColor: '#FFFFFF' }]} />
-        <View style={[styles.crewDot, styles.crewDotThree, { backgroundColor: theme.accent2 }]} />
-        <View style={[styles.crewLink, { backgroundColor: `${theme.accent}66` }]} />
-      </View>
-    );
-  }
-
-  if (id === 'chat') {
-    return (
-      <View style={styles.tileArt}>
-        <View style={[styles.chatBubbleBack, { borderColor: `${theme.accent2}66` }]} />
-        <View style={[styles.chatBubbleFront, { borderColor: `${theme.accent}88` }]}>
-          <View style={styles.chatDots}>
-            <View style={[styles.chatDot, { backgroundColor: theme.accent }]} />
-            <View style={[styles.chatDot, { backgroundColor: '#FFFFFF' }]} />
-            <View style={[styles.chatDot, { backgroundColor: theme.accent2 }]} />
-          </View>
-        </View>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.tileArt}>
-      <View style={[styles.memoryFrame, { borderColor: `${theme.accent}88` }]}>
-        <View style={[styles.memoryHorizon, { backgroundColor: `${theme.accent2}66` }]} />
-        <View style={[styles.memorySun, { backgroundColor: theme.accent }]} />
-      </View>
-      <View style={[styles.memoryFlash, { borderColor: theme.accent }]} />
-    </View>
-  );
-}
-
-function MoreTile({ id, label, onPress }) {
-  const theme = TILE_THEME[id];
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.moreTile,
-        {
-          backgroundColor: theme.background,
-          borderColor: theme.border,
-        },
-        pressed && {
-          transform: [{ scale: 0.985 }],
-          opacity: 0.9,
-        },
-      ]}
-    >
-      <View
-        style={[
-          styles.moreTileGlow,
-          { backgroundColor: `${theme.accent}12` },
-        ]}
-      />
-
-      <View
-        style={[
-          styles.moreTileTopLine,
-          { backgroundColor: theme.accent },
-        ]}
-      />
-
-      <Text style={[styles.moreTileCode, { color: `${theme.accent}99` }]}>
-        {theme.code}
-      </Text>
-
-      <MoreTileArt id={id} theme={theme} />
-
-      <View
-        style={[
-          styles.moreTileIcon,
-          {
-            borderColor: `${theme.accent}44`,
-            backgroundColor: `${theme.accent}0D`,
-          },
-        ]}
-      >
-        <AppIcon
-          name={TILE_ICONS[id]}
-          size={25}
-          color={theme.accent}
-        />
-      </View>
-
-      <View style={styles.moreTileBottom}>
-        <Text style={styles.moreTileLabel}>{label}</Text>
-        <Text style={[styles.moreTileSub, { color: theme.accent }]}>
-          {TILE_SUBS[id]}
-        </Text>
-      </View>
-
-      <View style={styles.moreTileArrow}>
-        <AppIcon
-          name="chevron"
-          size={16}
-          color="#FFFFFF"
-        />
-      </View>
-    </Pressable>
-  );
-}
-
 function MoreHome({
   profile,
+  sport,
   setPage,
   connectionProps,
+  onProfilePress,
 }) {
   const [liveCount, setLiveCount] = useState(0);
 
@@ -621,223 +474,141 @@ function MoreHome({
       ? '1 Rider draußen'
       : `${liveCount} Rider draußen`;
 
+  const aiOnline = connectionProps.aiStatus.state === 'online';
+  const cloudOnline = connectionProps.cloudStatus.state === 'online';
+
   return (
-    <View style={styles.moreHome}>
-      <View style={styles.moreHero}>
-        <Text style={styles.moreHeroTitle}>Mehr</Text>
-        <Text style={styles.moreHeroSub}>
-          CREW · CHAT · MEMORIES
-        </Text>
-        <View style={styles.moreHeroWaveWrap}>
-          <Svg width="128" height="30" viewBox="0 0 128 30">
-            <Defs>
-              <LinearGradient id="moreWave" x1="0" y1="0" x2="1" y2="0">
-                <Stop offset="0" stopColor={COLORS.pink} />
-                <Stop offset="0.62" stopColor="#B45CFF" />
-                <Stop offset="1" stopColor={COLORS.ice} />
-              </LinearGradient>
-            </Defs>
-            <Path
-              d="M4 17 C22 5 40 5 59 14 C79 24 96 24 124 9"
-              fill="none"
-              stroke="#FF2D87"
-              strokeOpacity={0.22}
-              strokeWidth={10}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <Path
-              d="M4 17 C22 5 40 5 59 14 C79 24 96 24 124 9"
-              fill="none"
-              stroke="url(#moreWave)"
-              strokeWidth={4.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-        </View>
-      </View>
-
-      <ConnectionCard {...connectionProps} />
-
-      <View style={styles.moreTilesRow}>
-        <MoreTile
-          id="crew"
-          label="Crew"
-          onPress={() => setPage('crew')}
-        />
-        <MoreTile
-          id="chat"
-          label="Chat"
-          onPress={() => setPage('chat')}
-        />
-        <MoreTile
-          id="memories"
-          label="Memories"
-          onPress={() => setPage('memories')}
-        />
-      </View>
-
-      <View style={styles.crewCloudCard}>
-        <View style={styles.crewCloudGlow} />
-        <View style={styles.crewCloudSceneOne} />
-        <View style={styles.crewCloudSceneTwo} />
-
-        <View style={styles.crewCloudTop}>
-          <View style={styles.crewCloudIcon}>
-            <AppIcon
-              name="cloud"
-              size={27}
-              color={COLORS.ice}
-            />
-          </View>
-
-          <Text style={styles.crewCloudTitle}>
-            Crew-Cloud
-          </Text>
-
-          <View style={styles.newBadge}>
-            <Text style={styles.newBadgeText}>NEU</Text>
+    <View style={styles.stack}>
+      <PressSurface
+        onPress={onProfilePress}
+        accessibilityLabel="Profilfoto ändern"
+        radius={RADII.cardSm}
+        style={styles.profileCard}
+      >
+        <View>
+          <Avatar uri={profile.avatarUri} size={60} />
+          <View style={styles.profileBadge}>
+            <AppIcon name="camera" size={12} color={COLORS.onLime} strokeWidth={2.6} />
           </View>
         </View>
-
-        <Text style={styles.crewCloudText}>
-          Die neue Crew-Basis. Erstelle eine Crew, lade deine
-          Freunde ein und tretet mit einem eigenen Code bei.
-          Eure Spots, Bestenlisten, Wochen-Battles, Ziele und
-          Fotos – alles an einem Ort.
-        </Text>
-
-        <Pressable
-          onPress={() => setPage('crew')}
-          style={({ pressed }) => [
-            styles.crewPrimaryButton,
-            pressed && { opacity: 0.86 },
-          ]}
-        >
-          <AppIcon
-            name="plus"
-            size={21}
-            color={COLORS.bg}
-            strokeWidth={2.2}
-          />
-          <Text style={styles.crewPrimaryText}>
-            Crew erstellen
+        <View style={{ flex: 1, gap: 5 }}>
+          <Text style={styles.profileName} numberOfLines={1}>@{profile.nickname}</Text>
+          <Text style={TYPE.label} numberOfLines={1}>
+            Profil · {sport.name} · {profile.season === 'winter' ? 'Winter' : 'Sommer'}
           </Text>
-        </Pressable>
+        </View>
+        <View style={styles.roundBtn}>
+          <AppIcon name="chevron" size={16} color={COLORS.text} />
+        </View>
+      </PressSurface>
 
-        <Pressable
-          onPress={() => setPage('crew')}
-          style={({ pressed }) => [
-            styles.crewSecondaryButton,
-            pressed && { opacity: 0.82 },
-          ]}
-        >
-          <AppIcon
-            name="crew"
-            size={20}
-            color="#FFFFFF"
+      <Card>
+        <View style={styles.headRow}>
+          <Title>Verbindungen</Title>
+          <Tag
+            label={aiOnline && cloudOnline ? 'Alles online' : 'Teilweise offline'}
+            tone={aiOnline && cloudOnline ? 'lime' : 'pink'}
+            dot
           />
-          <Text style={styles.crewSecondaryText}>
-            Mit Code beitreten
-          </Text>
-        </Pressable>
-      </View>
+        </View>
+        <ConnectionTiles {...connectionProps} />
+      </Card>
 
       <Pressable
         onPress={() => setPage('crew')}
+        accessibilityRole="button"
+        accessibilityLabel="Crew öffnen"
         style={({ pressed }) => [
-          styles.liveCard,
-          pressed && { opacity: 0.86 },
+          styles.crewTile,
+          SHADOWS.poster('rgba(140,124,255,0.55)'),
+          pressed && { transform: [{ scale: 0.985 }], opacity: 0.94 },
         ]}
       >
-        <View style={styles.liveIcon}>
-          <AppIcon
-            name="crew"
-            size={29}
-            color={COLORS.ice}
-          />
-        </View>
-
-        <View style={styles.liveContent}>
-          <View style={styles.liveHeaderRow}>
-            <Text style={styles.liveTitle}>
-              Wer ist gerade draußen?
-            </Text>
-            <AppIcon
-              name="chevron"
-              size={18}
-              color="#FFFFFF"
-            />
+        <Grad {...GRADIENTS.crew} radius={RADII.poster} />
+        <Text pointerEvents="none" style={styles.crewWatermark}>Crew</Text>
+        <View style={styles.headRow}>
+          <View style={{ gap: 5, flex: 1 }}>
+            <Text style={styles.crewTitle}>Crew</Text>
+            <Text style={styles.crewSub}>Deine Leute · Wer ist gerade draußen?</Text>
           </View>
-
-          <Text style={styles.liveSub}>
-            Sieh, welche Rider aus deiner Crew gerade unterwegs sind.
-          </Text>
-
-          <View style={styles.liveBottom}>
-            <View style={styles.avatarStack}>
-              <View style={[styles.liveAvatar, { zIndex: 4 }]}>
-                {profile.avatarUri ? (
-                  <Image
-                    source={{ uri: profile.avatarUri }}
-                    style={styles.liveAvatarImage}
-                  />
-                ) : (
-                  <AppIcon
-                    name="user"
-                    size={18}
-                    color={COLORS.ice}
-                  />
-                )}
-              </View>
-
-              <View style={[
-                styles.liveAvatar,
-                styles.liveAvatarOffset1,
-                { zIndex: 3 },
-              ]}>
-                <AppIcon
-                  name="user"
-                  size={17}
-                  color={COLORS.warning}
-                />
-              </View>
-
-              <View style={[
-                styles.liveAvatar,
-                styles.liveAvatarOffset2,
-                { zIndex: 2 },
-              ]}>
-                <AppIcon
-                  name="user"
-                  size={17}
-                  color={COLORS.pink}
-                />
-              </View>
-
-              <View style={[
-                styles.liveAvatar,
-                styles.liveAvatarOffset3,
-                { zIndex: 1 },
-              ]}>
-                <AppIcon
-                  name="user"
-                  size={17}
-                  color={COLORS.ice}
-                />
-              </View>
+          <View style={[styles.roundBtn, { backgroundColor: 'rgba(255,255,255,0.14)' }]}>
+            <AppIcon name="arrow" size={16} color={COLORS.text} />
+          </View>
+        </View>
+        <View style={styles.headRow}>
+          <View style={{ flexDirection: 'row', paddingLeft: 12 }}>
+            <View style={{ marginLeft: -12 }}>
+              <Avatar uri={profile.avatarUri} size={40} ring="#2A1F5C" />
             </View>
-
-            <View style={styles.liveStatusPill}>
-              <View style={styles.liveGreenDot} />
-              <Text style={styles.liveStatusText}>
-                {liveText}
-              </Text>
+            <View style={{ marginLeft: -12 }}>
+              <Avatar size={40} gradient={GRADIENTS.avatarLime} color="#0B1404" ring="#2A1F5C" />
             </View>
+            <View style={{ marginLeft: -12 }}>
+              <Avatar size={40} gradient={GRADIENTS.avatarWhite} color="#060A10" ring="#2A1F5C" />
+            </View>
+          </View>
+          <View style={[styles.livePill, liveCount ? styles.livePillOn : null]}>
+            <View style={[styles.liveDot, { backgroundColor: liveCount ? COLORS.onLime : COLORS.text }]} />
+            <Text style={[styles.livePillText, liveCount ? { color: COLORS.onLime } : null]}>{liveText}</Text>
           </View>
         </View>
       </Pressable>
+
+      <View style={styles.bento}>
+        <PressSurface
+          onPress={() => setPage('chat')}
+          accessibilityLabel="Chat öffnen"
+          gradient={GRADIENTS.tilePink}
+          style={styles.moreTile}
+        >
+          <ChatArt />
+          <View style={{ gap: 4 }}>
+            <Text style={styles.moreTileTitle}>Chat</Text>
+            <Text style={[TYPE.label, { color: '#E6A9C6' }]}>Crew-Räume</Text>
+          </View>
+        </PressSurface>
+        <PressSurface
+          onPress={() => setPage('memories')}
+          accessibilityLabel="Memories öffnen"
+          gradient={GRADIENTS.tileIce}
+          style={styles.moreTile}
+        >
+          <PolaroidArt />
+          <View style={{ gap: 4 }}>
+            <Text style={styles.moreTileTitle}>Memories</Text>
+            <Text style={[TYPE.label, { color: COLORS.iceText }]}>Deine Highlights</Text>
+          </View>
+        </PressSurface>
+      </View>
+
+      <PosterCard gradient={GRADIENTS.cloud} glow="rgba(207,255,58,0.25)">
+        <Sticker label="Neu" tone="lime" />
+        <Text style={styles.posterTitle}>Crew-Cloud</Text>
+        <Text style={[TYPE.body, { marginTop: 12, fontSize: 14 }]}>
+          Erstelle eine Crew, lade deine Freunde ein und tretet mit einem
+          eigenen Code bei. Eure Spots, Bestenlisten, Wochen-Battles, Ziele
+          und Fotos – alles an einem Ort.
+        </Text>
+        <View style={styles.codeRow} pointerEvents="none">
+          {['A', 'D', '–', '–', '–', '–'].map((c, i) => (
+            <View key={i} style={styles.codeSlot}>
+              <Text style={[styles.codeSlotText, i < 2 && { color: COLORS.lime }]}>{c}</Text>
+            </View>
+          ))}
+        </View>
+        <PrimaryButton
+          title="Crew erstellen"
+          icon="plus"
+          onPress={() => setPage('crew')}
+          style={{ marginTop: 16 }}
+        />
+        <SecondaryButton
+          title="Mit Code beitreten"
+          icon="key"
+          onPress={() => setPage('crew')}
+          style={{ marginTop: 10 }}
+        />
+      </PosterCard>
     </View>
   );
 }
@@ -847,13 +618,16 @@ function MoreHub({
   setPage,
   common,
   connectionProps,
+  onProfilePress,
 }) {
   if (page === 'home') {
     return (
       <MoreHome
         profile={common.profile}
+        sport={common.sport}
         setPage={setPage}
         connectionProps={connectionProps}
+        onProfilePress={onProfilePress}
       />
     );
   }
@@ -869,19 +643,20 @@ function MoreHub({
     <View style={styles.moreSubPage}>
       <Pressable
         onPress={() => setPage('home')}
+        accessibilityRole="button"
+        accessibilityLabel="Zurück zu Mehr"
         style={styles.backRow}
       >
         <View style={styles.backButton}>
-          <AppIcon
-            name="back"
-            size={18}
-            color={COLORS.ice}
-          />
+          <AppIcon name="back" size={18} color={COLORS.text} />
         </View>
         <Text style={styles.backText}>Mehr</Text>
       </Pressable>
 
-      <Text style={styles.subPageTitle}>{title}</Text>
+      <View style={styles.subHead}>
+        <SmallArt kind={page} />
+        <Text style={styles.subPageTitle}>{title}</Text>
+      </View>
 
       {page === 'crew' && <CrewTab {...common} />}
       {page === 'chat' && <ChatTab {...common} />}
@@ -890,93 +665,157 @@ function MoreHub({
   );
 }
 
-function BottomNav({ tab, onChange, color }) {
+function BottomNav({ tab, onChange }) {
   return (
-    <View style={styles.bottomNav}>
-      {PRIMARY_TABS.map(([id, icon, label]) => {
-        const active = tab === id;
+    <View style={styles.dockWrap}>
+      <View style={[styles.dock, SHADOWS.dock]}>
+        {PRIMARY_TABS.map(([id, icon, label]) => {
+          const active = tab === id;
 
-        return (
-          <Pressable
-            key={id}
-            onPress={() => onChange(id)}
-            style={styles.navItem}
-          >
-            <View
-              style={[
-                styles.navIconWrap,
-                active && {
-                  backgroundColor: `${color}10`,
-                },
-              ]}
+          return (
+            <Pressable
+              key={id}
+              onPress={() => onChange(id)}
+              accessibilityRole="tab"
+              accessibilityLabel={label}
+              accessibilityState={{ selected: active }}
+              style={[styles.navItem, active && [styles.navItemActive, SHADOWS.cta]]}
             >
               <AppIcon
                 name={icon}
-                size={22}
-                color={active ? color : '#F5F7FB'}
-                strokeWidth={active ? 2.2 : 1.8}
+                size={active ? 22 : 23}
+                color={active ? COLORS.onLime : COLORS.text3}
+                strokeWidth={active ? 2.3 : 2}
+                fillOpacity={active ? 0.3 : 0.22}
               />
-            </View>
-
-            <Text
-              style={[
-                styles.navLabel,
-                active && { color },
-              ]}
-            >
-              {label}
-            </Text>
-
-            {active ? (
-              <View style={styles.navSwoosh}>
-                <View
-                  style={[
-                    styles.navSwooshGlow,
-                    { backgroundColor: color },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.navSwooshMain,
-                    { backgroundColor: color },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.navSwooshKick,
-                    { backgroundColor: color },
-                  ]}
-                />
-              </View>
-            ) : null}
-          </Pressable>
-        );
-      })}
+              {active ? <Text style={styles.navLabel}>{label}</Text> : null}
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
+function RiderStrip({ sport, profile, stats, sportOpen, onToggle, sportOptions, onSeason, onSport }) {
+  return (
+    <View style={{ gap: 8 }}>
+      <PressSurface
+        onPress={onToggle}
+        accessibilityLabel="Sport wechseln"
+        radius={RADII.cardSm}
+        style={styles.rider}
+      >
+        <View style={styles.sportBadge}>
+          <Grad {...sportGradient(sport.color)} radius={18} />
+          <SportIcon id={sport.id} color="#0B1404" mono strokeWidth={2.4} size={28} />
+        </View>
+        <View style={{ flex: 1, gap: 5 }}>
+          <Text style={styles.riderName} numberOfLines={1}>{sport.name}</Text>
+          <Text style={TYPE.label} numberOfLines={1}>
+            {profile.season === 'winter' ? 'Winter' : 'Sommer'} · Battle {sport.battle}
+          </Text>
+        </View>
+        <View style={styles.swapTag}>
+          <AppIcon name="swap" size={14} color={COLORS.text} />
+          <Text style={styles.swapText}>{sportOpen ? 'Fertig' : 'Wechseln'}</Text>
+        </View>
+      </PressSurface>
+
+      {sportOpen ? (
+        <Card>
+          <Segmented
+            items={[
+              { key: 'summer', label: 'Sommer', icon: 'sun' },
+              { key: 'winter', label: 'Winter', icon: 'snow' },
+            ]}
+            value={profile.season}
+            onChange={onSeason}
+          />
+          <View style={styles.choiceGrid}>
+            {sportOptions.map((s) => (
+              <Pressable
+                key={s.id}
+                onPress={() => onSport(s.id)}
+                style={[styles.choice, sport.id === s.id && styles.choiceActive]}
+              >
+                <SportIcon
+                  id={s.id}
+                  color={sport.id === s.id ? COLORS.onLime : COLORS.text2}
+                  mono
+                  strokeWidth={2}
+                />
+                <Text
+                  numberOfLines={1}
+                  style={[styles.choiceText, sport.id === s.id && styles.choiceTextActive]}
+                >
+                  {s.name}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </Card>
+      ) : null}
+
+      <View style={styles.statsRow}>
+        <StatCard label="Tricks" value={stats.tricks || 0} />
+        <StatCard label="Siege" value={stats.wins || 0} />
+        <StatCard label="Streak" value={stats.streak || 0} />
+        <StatCard label="Minuten" value={stats.trainingMinutes || 0} />
+      </View>
+    </View>
+  );
+}
+
+const POSTERS = {
+  coach: { title: 'Coach', subtitle: 'Trick des Tages, Session & KI' },
+  skills: { title: 'Skills', subtitle: 'Skill-Baum, Wochenziel & Plan' },
+  battle: { title: 'Battle', subtitle: 'S.K.A.T.E., Bingo & Verlauf' },
+  more: { title: 'Mehr', subtitle: 'Crew, Chat & Memories' },
+};
+
+function posterArt(tab, sport) {
+  if (tab === 'coach') return <MoonArt />;
+  if (tab === 'skills') return <StairsArt />;
+  if (tab === 'battle') return <TapeArt word={sport.battle} />;
+  if (tab === 'more') return <BubblesArt />;
+  return null;
+}
+
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
   const [profile, setProfile] = useState(null);
   const [stats, setStatsState] = useState(EMPTY_STATS);
   const [tab, setTab] = useState('coach');
   const [morePage, setMorePage] = useState('home');
   const [sportOpen, setSportOpen] = useState(false);
   const [connectionsOpen, setConnectionsOpen] = useState(false);
-
   const [aiBusy, setAiBusy] = useState(false);
   const [aiStatus, setAiStatus] = useState({
     state: 'offline',
     error: '',
     model: '',
   });
-
   const [cloudBusy, setCloudBusy] = useState(false);
   const [cloudStatus, setCloudStatus] = useState({
     state: 'offline',
     error: '',
   });
+
+  // Night Ride v2: Schriften laden. Scheitert das, startet die App mit Systemschrift.
+  useEffect(() => {
+    let done = false;
+    const finish = () => {
+      if (!done) {
+        done = true;
+        setFontsReady(true);
+      }
+    };
+    Font.loadAsync(FONT_FILES).then(finish).catch(finish);
+    const timer = setTimeout(finish, 6000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -1004,7 +843,6 @@ export default function App() {
 
   const runAICheck = async (open = true) => {
     setAiBusy(true);
-
     if (open) setConnectionsOpen(true);
 
     const result = await checkAIConnection();
@@ -1036,7 +874,6 @@ export default function App() {
     }
 
     setCloudBusy(true);
-
     if (open) setConnectionsOpen(true);
 
     const result = await checkCloudConnection(
@@ -1091,7 +928,7 @@ export default function App() {
     await localSet('profile', next);
   };
 
-  if (!ready) {
+  if (!ready || !fontsReady) {
     return (
       <View style={styles.loadingScreen}>
         <StatusBar
@@ -1180,6 +1017,30 @@ export default function App() {
     onCloudCheck: () => runCloudCheck(true),
   };
 
+  const rider = (
+    <RiderStrip
+      sport={sport}
+      profile={profile}
+      stats={stats}
+      sportOpen={sportOpen}
+      onToggle={() => {
+        setSportOpen((value) => !value);
+      }}
+      sportOptions={sportOptions}
+      onSeason={(season) => {
+        changeSeason(season);
+      }}
+      onSport={(id) => {
+        changeSport(id);
+      }}
+    />
+  );
+
+  const glow = tab === 'more' ? COLORS.violet : TAB_GLOW[tab];
+  const poster = tab === 'more'
+    ? (morePage === 'home' ? POSTERS.more : null)
+    : POSTERS[tab];
+
   return (
     <View style={styles.safe}>
       <StatusBar
@@ -1193,241 +1054,85 @@ export default function App() {
         keyboardShouldPersistTaps="handled"
         nestedScrollEnabled
       >
+        {glow ? (
+          <Glow color={glow} opacity={0.17} size={460} style={{ right: -170, top: -170 }} />
+        ) : null}
+
         <View style={styles.topRow}>
           <Logo compact />
 
           <View style={styles.topActions}>
-            <View style={styles.bellButton}>
+            <View style={styles.bellButton} accessibilityLabel="Benachrichtigungen">
               <AppIcon
                 name="bell"
                 size={20}
-                color="#FFFFFF"
+                color={COLORS.text}
               />
               <View style={styles.bellDot} />
             </View>
 
             <Pressable
               onPress={changeProfilePhoto}
+              accessibilityRole="button"
+              accessibilityLabel="Profilfoto ändern"
               style={({ pressed }) => [
                 styles.profileChip,
                 pressed && { opacity: 0.8 },
               ]}
             >
-              <View style={styles.avatarWrap}>
-                {profile.avatarUri ? (
-                  <Image
-                    source={{ uri: profile.avatarUri }}
-                    style={styles.avatar}
-                  />
-                ) : (
-                  <AppIcon
-                    name="user"
-                    size={19}
-                    color={COLORS.ice}
-                  />
-                )}
-              </View>
-
-              <Text style={styles.profileName}>
+              <Avatar uri={profile.avatarUri} size={36} />
+              <Text style={styles.profileNameChip} numberOfLines={1}>
                 @{profile.nickname}
               </Text>
             </Pressable>
           </View>
         </View>
 
-        {tab !== 'more' ? (
-          <>
-            <Card style={styles.focusCard} variant="night">
-              <View style={styles.focusRow}>
-                <View
-                  style={[
-                    styles.sportIconCircle,
-                    {
-                      borderColor: `${sport.color}55`,
-                      backgroundColor: `${sport.color}0F`,
-                    },
-                  ]}
-                >
-                  <SportIcon
-                    id={sport.id}
-                    color={sport.color}
-                  />
-                </View>
+        {poster ? (
+          <ScreenPoster
+            title={poster.title}
+            subtitle={poster.subtitle}
+            art={posterArt(tab, sport)}
+          />
+        ) : null}
 
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[
-                      styles.focusSport,
-                      { color: sport.color },
-                    ]}
-                  >
-                    {sport.name}
-                  </Text>
+        {tab !== 'more' && tab !== 'parks' ? rider : null}
 
-                  <View style={styles.focusMetaRow}>
-                    <SeasonChip season={profile.season} />
-                    <View style={styles.metaDot} />
-                    <Text style={styles.focusMeta}>
-                      Battle {sport.battle}
-                    </Text>
-                  </View>
-                </View>
+        {tab === 'coach' && (
+          <CoachTab
+            {...common}
+            connection={<ConnectionCard {...connectionProps} />}
+          />
+        )}
 
-                <Pressable
-                  onPress={() => {
-                    setSportOpen((value) => !value);
-                  }}
-                  style={styles.changeSportButton}
-                >
-                  <Text style={styles.changeSportText}>
-                    {sportOpen ? 'Fertig' : 'Wechseln'}
-                  </Text>
-                </Pressable>
-              </View>
+        {tab === 'skills' && (
+          <SkillsTab {...common} />
+        )}
 
-              <View style={styles.statsRow}>
-                <StatBadge
-                  label="Tricks"
-                  value={stats.tricks || 0}
-                  color={sport.color}
-                />
-                <StatBadge
-                  label="Siege"
-                  value={stats.wins || 0}
-                  color={COLORS.pink}
-                />
-                <StatBadge
-                  label="Streak"
-                  value={stats.streak || 0}
-                  color={COLORS.ice}
-                />
-                <StatBadge
-                  label="Min"
-                  value={stats.trainingMinutes || 0}
-                  color={COLORS.volt}
-                />
-              </View>
+        {tab === 'battle' && (
+          <BattleTab {...common} />
+        )}
 
-              {sportOpen ? (
-                <View style={styles.sportChooser}>
-                  <View style={styles.row}>
-                    <Pressable
-                      onPress={() => {
-                        changeSeason('summer');
-                      }}
-                      style={[
-                        styles.seasonChoice,
-                        profile.season === 'summer' &&
-                          styles.seasonChoiceActive,
-                      ]}
-                    >
-                      <AppIcon
-                        name="sun"
-                        size={18}
-                        color={
-                          profile.season === 'summer'
-                            ? COLORS.volt
-                            : COLORS.muted
-                        }
-                      />
-                      <Text style={styles.seasonChoiceText}>
-                        Sommer
-                      </Text>
-                    </Pressable>
+        {tab === 'parks' && (
+          <ParksTab {...common} rider={rider} />
+        )}
 
-                    <Pressable
-                      onPress={() => {
-                        changeSeason('winter');
-                      }}
-                      style={[
-                        styles.seasonChoice,
-                        profile.season === 'winter' &&
-                          styles.seasonChoiceActive,
-                      ]}
-                    >
-                      <AppIcon
-                        name="snow"
-                        size={18}
-                        color={
-                          profile.season === 'winter'
-                            ? COLORS.ice
-                            : COLORS.muted
-                        }
-                      />
-                      <Text style={styles.seasonChoiceText}>
-                        Winter
-                      </Text>
-                    </Pressable>
-                  </View>
-
-                  <View style={styles.choiceGrid}>
-                    {sportOptions.map((s) => (
-                      <Pressable
-                        key={s.id}
-                        onPress={() => {
-                          changeSport(s.id);
-                        }}
-                        style={[
-                          styles.choice,
-                          sport.id === s.id && {
-                            borderColor: s.color,
-                            backgroundColor: `${s.color}12`,
-                          },
-                        ]}
-                      >
-                        <SportIcon
-                          id={s.id}
-                          color={s.color}
-                        />
-                        <Text
-                          style={[
-                            styles.choiceText,
-                            sport.id === s.id && {
-                              color: s.color,
-                            },
-                          ]}
-                        >
-                          {s.name}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                </View>
-              ) : null}
-            </Card>
-
-            {tab === 'coach' && (
-              <CoachTab
-                {...common}
-                connection={<ConnectionCard {...connectionProps} />}
-              />
-            )}
-            {tab === 'skills' && (
-              <SkillsTab {...common} />
-            )}
-            {tab === 'battle' && (
-              <BattleTab {...common} />
-            )}
-            {tab === 'parks' && (
-              <ParksTab {...common} />
-            )}
-          </>
-        ) : (
+        {tab === 'more' ? (
           <MoreHub
             page={morePage}
             setPage={setMorePage}
             common={common}
             connectionProps={connectionProps}
+            onProfilePress={changeProfilePhoto}
           />
-        )}
+        ) : null}
 
-        <View style={{ height: 12 }} />
+        <View style={{ height: 28 }} />
       </ScrollView>
 
       <BottomNav
         tab={tab}
         onChange={handleTabChange}
-        color={tab === 'more' ? COLORS.ice : sport.color}
       />
     </View>
   );
@@ -1443,9 +1148,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   page: {
-    paddingHorizontal: 14,
-    paddingTop: 8,
+    paddingHorizontal: 18,
+    paddingTop: 14,
     paddingBottom: 8,
+    gap: 14,
+  },
+  stack: {
+    gap: 14,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+  },
+  headRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 10,
   },
   loadingScreen: {
@@ -1454,60 +1173,51 @@ const styles = StyleSheet.create({
   },
   loadingImage: {
     flex: 1,
-    width: '100%',
-    height: '100%',
   },
-  bgGlowOne: {
-    position: 'absolute',
-    top: 70,
-    right: -170,
-    width: 280,
-    height: 280,
-    borderRadius: 999,
-    backgroundColor: `${COLORS.ice}05`,
-  },
-  bgGlowTwo: {
-    position: 'absolute',
-    top: 400,
-    left: -190,
-    width: 280,
-    height: 280,
-    borderRadius: 999,
-    backgroundColor: `${COLORS.pink}04`,
-  },
+
+  // Onboarding
   onboard: {
-    padding: 18,
+    paddingHorizontal: 18,
+    paddingTop: 28,
+    paddingBottom: 40,
     gap: 14,
   },
   onboardTop: {
-    gap: 7,
-    marginTop: 10,
-    marginBottom: 4,
     alignItems: 'center',
-  },
-  onboardStep: {
-    color: COLORS.muted,
-    fontWeight: '800',
-  },
-  welcomeCard: {
-    backgroundColor: COLORS.bgSoft,
-  },
-  welcomeKicker: {
-    color: COLORS.ice,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 2,
+    gap: 14,
+    marginBottom: 10,
   },
   welcomeTitle: {
-    color: COLORS.text,
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: -0.7,
+    ...TYPE.display,
+    fontSize: 54,
+    lineHeight: 50,
+    marginTop: 20,
   },
-  row: {
+  welcomeText: {
+    ...TYPE.body,
+    color: '#CCD6E4',
+    marginTop: 14,
+  },
+  seasonChoice: {
+    flex: 1,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: COLORS.raised,
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
+  },
+  seasonChoiceActive: {
+    backgroundColor: COLORS.text,
+  },
+  seasonChoiceText: {
+    fontFamily: FONTS.semibold,
+    color: COLORS.text2,
+    fontSize: 14,
+  },
+  seasonChoiceTextActive: {
+    color: COLORS.onLime,
   },
   choiceGrid: {
     flexDirection: 'row',
@@ -1515,813 +1225,391 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   choice: {
-    width: '48%',
-    minHeight: 62,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    backgroundColor: COLORS.bgSoft,
-    borderRadius: 18,
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  choiceText: {
-    color: COLORS.text,
-    fontWeight: '800',
-    flex: 1,
-  },
-  assessLevel: {
-    gap: 7,
-  },
-  assessLevelTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    marginTop: 5,
-  },
-  assessSkill: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    borderRadius: 15,
-    paddingHorizontal: 12,
+    width: '48.5%',
+    height: 60,
+    borderRadius: RADII.stat,
+    backgroundColor: COLORS.tile,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    paddingHorizontal: 14,
+  },
+  choiceActive: {
+    backgroundColor: COLORS.text,
+  },
+  choiceText: {
+    fontFamily: FONTS.semibold,
+    color: COLORS.text,
+    fontSize: 13.5,
+    flexShrink: 1,
+  },
+  choiceTextActive: {
+    color: COLORS.onLime,
+  },
+  assessLevel: {
+    gap: 8,
+  },
+  assessLevelTitle: {
+    ...TYPE.display,
+    fontSize: 28,
+    lineHeight: 30,
+    marginTop: 6,
+  },
+  assessSkill: {
+    minHeight: 50,
+    borderRadius: 18,
+    backgroundColor: COLORS.tile,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 12,
+  },
+  assessSkillActive: {
+    backgroundColor: 'rgba(207,255,58,0.12)',
   },
   assessCheck: {
-    color: COLORS.muted,
-    fontSize: 24,
-    width: 26,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.nodeIdle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  assessCheckActive: {
+    backgroundColor: COLORS.lime,
   },
   assessText: {
+    fontFamily: FONTS.semibold,
     color: COLORS.text,
-    fontWeight: '700',
+    fontSize: 14,
     flex: 1,
   },
+
+  // Header
   topRow: {
-    minHeight: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 10,
   },
   topActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: 10,
+    flexShrink: 1,
   },
   bellButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: COLORS.panel,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.cardTop,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
   },
   bellDot: {
     position: 'absolute',
-    right: 8,
-    top: 7,
-    width: 7,
-    height: 7,
-    borderRadius: 999,
+    top: 10,
+    right: 11,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: COLORS.pink,
   },
   profileChip: {
-    minHeight: 40,
-    maxWidth: 142,
-    backgroundColor: COLORS.panel,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    borderRadius: 15,
-    paddingLeft: 4,
-    paddingRight: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  avatarWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 11,
-    backgroundColor: COLORS.panel2,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-  },
-  avatarEdit: {
-    position: 'absolute',
-    right: -2,
-    bottom: -2,
-    width: 14,
-    height: 14,
+    height: 44,
     borderRadius: 999,
-    backgroundColor: COLORS.ice,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  profileName: {
-    color: COLORS.text,
-    fontWeight: '800',
-    flexShrink: 1,
-    fontSize: 13,
-  },
-  focusCard: {
-    backgroundColor: COLORS.panel,
-    borderColor: COLORS.lineSoft,
-  },
-  focusRow: {
+    backgroundColor: COLORS.cardTop,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 9,
+    paddingLeft: 4,
+    paddingRight: 16,
+    flexShrink: 1,
   },
-  sportIconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 15,
-    borderWidth: 1,
+  profileNameChip: {
+    fontFamily: FONTS.semibold,
+    color: COLORS.text,
+    fontSize: 13.5,
+    flexShrink: 1,
+  },
+
+  // Rider-Strip
+  rider: {
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  sportBadge: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  focusSport: {
-    fontSize: 21,
-    fontWeight: '900',
-    fontStyle: 'italic',
+  riderName: {
+    ...TYPE.head,
+    fontSize: 17,
+    lineHeight: 20,
   },
-  focusMetaRow: {
-    marginTop: 4,
+  swapTag: {
+    height: 34,
+    borderRadius: 999,
+    backgroundColor: COLORS.raised,
+    paddingHorizontal: 13,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  seasonChip: {
+  swapText: {
+    fontFamily: FONTS.bold,
+    fontSize: 11.5,
+    color: COLORS.text,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  // Verbindungen
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusLink: {
+    marginLeft: 'auto',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  seasonChipText: {
-    color: COLORS.muted,
-    fontSize: 12,
-    fontWeight: '700',
+  statusLinkText: {
+    ...TYPE.label,
   },
-  metaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 99,
-    backgroundColor: COLORS.muted,
-  },
-  focusMeta: {
-    color: COLORS.muted,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  changeSportButton: {
-    backgroundColor: COLORS.panel2,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-  },
-  changeSportText: {
-    color: COLORS.ice,
-    fontWeight: '800',
-    fontSize: 12.5,
-  },
-  statsRow: {
+  connGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  sportChooser: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.lineSoft,
-    paddingTop: 12,
     gap: 10,
   },
-  seasonChoice: {
-    minWidth: 112,
-    minHeight: 42,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    backgroundColor: COLORS.bgSoft,
-    paddingHorizontal: 13,
+  connTile: {
+    flex: 1,
+    borderRadius: RADII.tile,
+    backgroundColor: COLORS.tile,
+    padding: 14,
+    gap: 12,
+  },
+  connTileTop: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 7,
   },
-  seasonChoiceActive: {
-    borderColor: COLORS.ice,
-    backgroundColor: `${COLORS.ice}0C`,
+  connDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  seasonChoiceText: {
+  connName: {
+    fontFamily: FONTS.bold,
     color: COLORS.text,
-    fontWeight: '800',
+    fontSize: 14,
   },
-  connectionCard: {
-    backgroundColor: COLORS.panel,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    padding: 12,
-    gap: 9,
+  connSub: {
+    ...TYPE.label,
+    fontSize: 11,
   },
-  connectionHeader: {
+
+  // Mehr
+  profileCard: {
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 14,
   },
-  connectionIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 14,
-    backgroundColor: '#0B1A25',
-    borderWidth: 1,
-    borderColor: '#1D3A49',
+  profileBadge: {
+    position: 'absolute',
+    right: -3,
+    bottom: -3,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.lime,
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 0 0 3px #0E172A',
+  },
+  profileName: {
+    ...TYPE.head,
+    fontSize: 19,
+    lineHeight: 23,
+  },
+  roundBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.raised,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  connectionText: {
-    flex: 1,
+  crewTile: {
+    height: 184,
+    borderRadius: RADII.poster,
+    padding: 20,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+    backgroundColor: '#2A1F6A',
   },
-  connectionTitle: {
-    color: COLORS.text,
-    fontSize: 16,
-    fontWeight: '800',
+  crewWatermark: {
+    ...TYPE.display,
+    position: 'absolute',
+    right: -10,
+    bottom: -24,
+    fontSize: 140,
+    lineHeight: 140,
+    color: 'rgba(255,255,255,0.06)',
   },
-  connectionSub: {
-    color: COLORS.muted,
-    fontSize: 12,
-    marginTop: 3,
+  crewTitle: {
+    ...TYPE.head,
+    fontSize: 26,
+    lineHeight: 29,
   },
-  openButton: {
-    minHeight: 36,
-    paddingHorizontal: 11,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#245267',
-    backgroundColor: '#0A1923',
+  crewSub: {
+    fontFamily: FONTS.semibold,
+    fontSize: 13,
+    color: '#D6D0FF',
+  },
+  livePill: {
+    height: 36,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    backgroundColor: COLORS.glass,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 8,
   },
-  openButtonText: {
-    color: COLORS.ice,
-    fontWeight: '800',
-    fontSize: 12.5,
+  livePillOn: {
+    backgroundColor: COLORS.lime,
   },
-  connectionStack: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.lineSoft,
-    paddingTop: 10,
-    gap: 10,
-  },
-  connectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-  },
-  statusDot: {
+  liveDot: {
     width: 8,
     height: 8,
-    borderRadius: 99,
+    borderRadius: 4,
   },
-  statusName: {
+  livePillText: {
+    fontFamily: FONTS.bold,
+    fontSize: 13,
     color: COLORS.text,
-    fontWeight: '900',
   },
-  moreHome: {
-    gap: 10,
-  },
-  moreHero: {
-    paddingHorizontal: 2,
-    paddingTop: 5,
-    paddingBottom: 0,
-  },
-  moreHeroTitle: {
-    color: COLORS.text,
-    fontSize: 40,
-    lineHeight: 43,
-    fontWeight: '900',
-    fontStyle: 'italic',
-    letterSpacing: -1.5,
-  },
-  moreHeroSub: {
-    color: COLORS.muted,
-    fontSize: 9.4,
-    fontWeight: '800',
-    letterSpacing: 2.2,
-    marginTop: 1,
-  },
-
-
-
-
-
-  moreHeroWaveWrap: {
-    width: 128,
-    height: 28,
-    marginTop: 1,
-    marginLeft: -2,
-  },
-  moreTilesRow: {
+  bento: {
     flexDirection: 'row',
-    gap: 7,
+    gap: 12,
   },
   moreTile: {
     flex: 1,
-    height: 132,
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1,
-    padding: 10,
-    justifyContent: 'flex-end',
-    position: 'relative',
-  },
-  moreTileGlow: {
-    position: 'absolute',
-    width: 96,
-    height: 96,
-    borderRadius: 999,
-    right: -50,
-    top: -48,
-    opacity: 0.26,
-  },
-  moreTileTopLine: {
-    position: 'absolute',
-    top: 0,
-    left: 12,
-    width: 30,
-    height: 2,
-    borderRadius: 999,
-    opacity: 0.78,
-  },
-  moreTileCode: {
-    position: 'absolute',
-    right: 9,
-    top: 8,
-    fontSize: 8.5,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    opacity: 0.55,
-  },
-  tileArt: {
-    position: 'absolute',
-    left: 7,
-    right: 7,
-    top: 8,
-    height: 68,
-    opacity: 0.68,
-  },
-  crewOrbit: {
-    position: 'absolute',
-    width: 64,
-    height: 38,
-    borderRadius: 999,
-    borderWidth: 1,
-    left: 17,
-    top: 14,
-    transform: [{ rotate: '-10deg' }],
-  },
-  crewDot: {
-    position: 'absolute',
-    width: 14,
-    height: 14,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#071722',
-  },
-  crewDotOne: {
-    left: 20,
-    top: 21,
-  },
-  crewDotTwo: {
-    left: 43,
-    top: 11,
-  },
-  crewDotThree: {
-    left: 63,
-    top: 28,
-  },
-  crewLink: {
-    position: 'absolute',
-    left: 31,
-    top: 37,
-    width: 39,
-    height: 2,
-    borderRadius: 99,
-    transform: [{ rotate: '8deg' }],
-  },
-  chatBubbleBack: {
-    position: 'absolute',
-    width: 58,
-    height: 34,
-    borderRadius: 13,
-    borderWidth: 1,
-    right: 11,
-    top: 10,
-    transform: [{ rotate: '7deg' }],
-  },
-  chatBubbleFront: {
-    position: 'absolute',
-    width: 66,
-    height: 38,
-    borderRadius: 14,
-    borderWidth: 1,
-    left: 11,
-    top: 24,
-    backgroundColor: '#120B16CC',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chatDots: {
-    flexDirection: 'row',
-    gap: 5,
-  },
-  chatDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 99,
-  },
-  memoryFrame: {
-    position: 'absolute',
-    left: 17,
-    top: 11,
-    width: 62,
-    height: 45,
-    borderRadius: 11,
-    borderWidth: 1,
-    overflow: 'hidden',
-    backgroundColor: '#091A29AA',
-  },
-  memoryHorizon: {
-    position: 'absolute',
-    left: -5,
-    right: -5,
-    bottom: 7,
-    height: 18,
-    borderRadius: 99,
-    transform: [{ rotate: '-7deg' }],
-  },
-  memorySun: {
-    position: 'absolute',
-    right: 10,
-    top: 8,
-    width: 10,
-    height: 10,
-    borderRadius: 99,
-  },
-  memoryFlash: {
-    position: 'absolute',
-    right: 7,
-    top: 6,
-    width: 15,
-    height: 15,
-    borderWidth: 1,
-    transform: [{ rotate: '45deg' }],
-  },
-  moreTileIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 7,
-  },
-  moreTileBottom: {
-    gap: 2,
-  },
-  moreTileLabel: {
-    color: COLORS.text,
-    fontWeight: '800',
-    fontSize: 14,
-  },
-  moreTileSub: {
-    fontSize: 9.2,
-    fontWeight: '700',
-  },
-  moreTileArrow: {
-    position: 'absolute',
-    right: 5,
-    bottom: 27,
-  },
-  crewCloudCard: {
-    backgroundColor: COLORS.panel,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    borderRadius: 19,
-    padding: 14,
-    gap: 10,
-    overflow: 'hidden',
-  },
-  crewCloudGlow: {
-    position: 'absolute',
-    right: -30,
-    top: -30,
-    width: 130,
-    height: 130,
-    borderRadius: 999,
-    backgroundColor: '#4ADFF205',
-  },
-  crewCloudSceneOne: {
-    position: 'absolute',
-    width: 0,
-    height: 0,
-    opacity: 0,
-  },
-  crewCloudSceneTwo: {
-    position: 'absolute',
-    width: 0,
-    height: 0,
-    opacity: 0,
-  },
-  crewCloudTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  crewCloudIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    backgroundColor: '#0A1A24',
-    borderWidth: 1,
-    borderColor: '#1C3B48',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  crewCloudTitle: {
-    color: COLORS.text,
-    fontSize: 19,
-    fontWeight: '800',
-    flex: 1,
-  },
-  newBadge: {
-    backgroundColor: '#CFFF3A16',
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#CFFF3A55',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-  },
-  newBadgeText: {
-    color: COLORS.volt,
-    fontWeight: '800',
-    fontSize: 9.8,
-  },
-  crewCloudText: {
-    color: '#B8C2CF',
-    lineHeight: 18.5,
-    fontSize: 12.5,
-  },
-  crewPrimaryButton: {
-    minHeight: 46,
-    borderRadius: 14,
-    backgroundColor: COLORS.volt,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  crewPrimaryText: {
-    color: COLORS.bg,
-    fontWeight: '900',
-    fontSize: 15,
-  },
-  crewSecondaryButton: {
-    minHeight: 43,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    backgroundColor: '#08121C',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  crewSecondaryText: {
-    color: '#D4DCE7',
-    fontWeight: '700',
-    fontSize: 13.5,
-  },
-  liveCard: {
-    backgroundColor: COLORS.panel,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    borderRadius: 18,
-    minHeight: 116,
-    padding: 12,
-    flexDirection: 'row',
-    gap: 10,
-  },
-  liveIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
-    backgroundColor: '#0A1A24',
-    borderWidth: 1,
-    borderColor: '#1B3947',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  liveContent: {
-    flex: 1,
-  },
-  liveHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  liveTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '900',
-    flex: 1,
-  },
-  liveSub: {
-    color: COLORS.muted,
-    fontSize: 11.3,
-    lineHeight: 16,
-    marginTop: 3,
-  },
-  liveBottom: {
-    marginTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
+    height: 190,
+    padding: 18,
     justifyContent: 'space-between',
   },
-  avatarStack: {
-    width: 105,
-    height: 35,
-    position: 'relative',
+  moreTileTitle: {
+    ...TYPE.head,
+    fontSize: 21,
+    lineHeight: 24,
   },
-  liveAvatar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    width: 35,
-    height: 35,
-    borderRadius: 999,
-    backgroundColor: COLORS.panel2,
-    borderWidth: 2,
-    borderColor: '#DDE7F1',
+  posterTitle: {
+    ...TYPE.display,
+    fontSize: 60,
+    lineHeight: 56,
+    marginTop: 18,
+  },
+  codeRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 16,
+  },
+  codeSlot: {
+    flex: 1,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: 'rgba(3,5,10,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
-  liveAvatarOffset1: {
-    left: 24,
+  codeSlotText: {
+    ...TYPE.number,
+    fontSize: 26,
+    color: '#3A4668',
   },
-  liveAvatarOffset2: {
-    left: 48,
-  },
-  liveAvatarOffset3: {
-    left: 72,
-  },
-  liveAvatarImage: {
-    width: 31,
-    height: 31,
-    borderRadius: 999,
-  },
-  liveStatusPill: {
-    minHeight: 31,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    backgroundColor: '#08121C',
-    paddingHorizontal: 9,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  liveGreenDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 99,
-    backgroundColor: '#25F13B',
-    shadowColor: '#25F13B',
-    shadowOpacity: 0.9,
-    shadowRadius: 5,
-  },
-  liveStatusText: {
-    color: '#E4EAF2',
-    fontSize: 11,
-    fontWeight: '700',
-  },
+
+  // Unterseiten
   moreSubPage: {
-    gap: 12,
+    gap: 14,
   },
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: 10,
     alignSelf: 'flex-start',
+    marginTop: 8,
   },
   backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: COLORS.line,
-    backgroundColor: COLORS.panel,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.cardTop,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backText: {
-    color: COLORS.ice,
-    fontWeight: '800',
+    fontFamily: FONTS.semibold,
+    color: COLORS.text2,
+    fontSize: 14,
+  },
+  subHead: {
+    height: 120,
+    justifyContent: 'flex-end',
+    marginHorizontal: -18,
+    paddingHorizontal: 18,
+    paddingBottom: 12,
+    overflow: 'hidden',
   },
   subPageTitle: {
-    color: '#FFFFFF',
-    fontSize: 33,
-    fontWeight: '900',
-    fontStyle: 'italic',
-    letterSpacing: -1,
-  },
-  bottomNav: {
-    minHeight: 72,
-    flexDirection: 'row',
-    backgroundColor: '#071019F8',
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    borderRadius: 22,
-    marginHorizontal: 10,
-    marginBottom: 8,
-    paddingHorizontal: 5,
-    paddingTop: 6,
-    paddingBottom: 7,
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 4,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 1,
-    position: 'relative',
-    minHeight: 56,
-  },
-  navIconWrap: {
-    width: 40,
-    height: 29,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navLabel: {
-    color: '#B9C3CF',
-    fontSize: 10,
-    fontWeight: '700',
-    marginTop: 1,
+    ...TYPE.display,
+    fontSize: 64,
+    lineHeight: 62,
   },
 
-  navSwoosh: {
-    position: 'absolute',
-    bottom: -2,
-    width: 40,
-    height: 11,
+  // Dock
+  dockWrap: {
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    paddingBottom: 12,
+    backgroundColor: COLORS.bg,
   },
-  navSwooshGlow: {
-    position: 'absolute',
-    left: 1,
-    top: 4,
-    width: 36,
-    height: 6,
+  dock: {
+    height: 70,
     borderRadius: 999,
-    opacity: 0.11,
-    transform: [{ rotate: '-4deg' }],
+    backgroundColor: '#0F182C',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
   },
-  navSwooshMain: {
-    position: 'absolute',
-    left: 3,
-    top: 5,
-    width: 29,
-    height: 2.5,
-    borderRadius: 999,
-    transform: [{ rotate: '-5deg' }],
+  navItem: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
-  navSwooshKick: {
-    position: 'absolute',
-    left: 23,
-    top: 6,
-    width: 13,
-    height: 2.5,
-    borderRadius: 999,
-    transform: [{ rotate: '8deg' }],
+  navItemActive: {
+    width: 'auto',
+    paddingLeft: 16,
+    paddingRight: 20,
+    backgroundColor: COLORS.lime,
+  },
+  navLabel: {
+    ...TYPE.button,
+    color: COLORS.onLime,
+    fontSize: 14,
   },
 });

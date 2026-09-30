@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/UI';
-import PageHero from '../components/PageHero';
-import { COLORS } from '../theme';
+import AppIcon from '../components/AppIcon';
+import { Glow, Grad } from '../design/Grad';
+import { CoinArt } from '../design/art';
+import { Avatar, IconTile, PosterCard, SecondaryButton, Segmented, Sticker, Surface, Tag } from '../design/kit';
+import { COLORS, FONTS, GRADIENTS, RADII, TYPE } from '../theme';
 import { allTricks } from '../data/sports';
 import { askAI } from '../services/ai';
 import { localSet } from '../storage';
@@ -187,239 +190,261 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
     }
   };
 
+  const AVATARS = [GRADIENTS.avatarCyan, GRADIENTS.avatarViolet, GRADIENTS.avatarWhite, GRADIENTS.avatarLime];
+  const AVATAR_INK = ['#04202A', '#140C3A', '#060A10', '#0B1404'];
+  const doneCells = bingo.filter((item) => item.done).length;
+
   return (
     <View style={styles.stack}>
-      <PageHero
-        type="battle"
-        title="Battle"
-        subtitle="S.K.A.T.E. · BINGO · HISTORY"
-        accent={COLORS.pink}
-      />
-
       {notice ? (
         <Notice>{notice}</Notice>
       ) : null}
 
-      <Card variant="purple">
-        <Title color={sport.color}>
-          {word}-Battle
-        </Title>
+      <PosterCard gradient={GRADIENTS.battle} glow="rgba(255,61,139,0.35)" style={styles.poster}>
+        <View style={{ paddingHorizontal: 6 }}>
+          <Sticker label="Letter-Battle" tone="pink" />
+          <Text style={styles.posterTitle} numberOfLines={1} adjustsFontSizeToFit>
+            {word}-Battle
+          </Text>
+          <Text style={[TYPE.caption, { marginTop: 12, color: '#C3AFC0' }]}>
+            Zwei bis sechs Spieler. Wer einen
+            gesetzten Trick nicht steht, bekommt
+            den nächsten Buchstaben.
+          </Text>
+        </View>
 
-        <Muted>
-          Zwei bis sechs Spieler. Wer einen
-          gesetzten Trick nicht steht, bekommt
-          den nächsten Buchstaben.
-        </Muted>
+        <View style={styles.players}>
+          {players.map((player, index) => {
+            const left = word.length - player.fails;
+            const out = left <= 0;
+            const close = !out && left <= 2 && player.fails > 0;
+            return (
+              <View
+                key={player.id}
+                style={[
+                  styles.player,
+                  close && { backgroundColor: 'rgba(255,61,139,0.1)' },
+                  out && { opacity: 0.55 },
+                ]}
+              >
+                <View style={styles.row}>
+                  <Avatar
+                    size={40}
+                    letter={(player.name || `${index + 1}`).trim().charAt(0).toUpperCase() || String(index + 1)}
+                    gradient={AVATARS[index % AVATARS.length]}
+                    color={AVATAR_INK[index % AVATAR_INK.length]}
+                  />
+                  <TextInput
+                    value={player.name}
+                    onChangeText={(name) =>
+                      setPlayers((old) =>
+                        old.map((entry) =>
+                          entry.id === player.id
+                            ? {
+                                ...entry,
+                                name,
+                              }
+                            : entry
+                        )
+                      )
+                    }
+                    placeholder={`Spieler ${index + 1}`}
+                    placeholderTextColor={COLORS.placeholder}
+                    selectionColor={COLORS.lime}
+                    style={styles.playerName}
+                  />
+                  {close ? <Tag label={`${left} übrig`} tone="solidPink" /> : null}
+                  {out ? <Tag label="raus" tone="solidPink" /> : null}
+                  <SecondaryButton
+                    title="Bail +1"
+                    tone="pink"
+                    size="sm"
+                    onPress={() =>
+                      fail(player.id)
+                    }
+                  />
+                </View>
+                <View style={styles.letters}>
+                  {word.split('').map((letter, i) => (
+                    <View key={`${letter}-${i}`} style={[styles.letter, i < player.fails && styles.letterLost]}>
+                      {i < player.fails ? <Grad {...GRADIENTS.pink} radius={12} /> : null}
+                      <Text style={[styles.letterText, i < player.fails && { color: '#FFFFFF' }]}>{letter}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            );
+          })}
+        </View>
 
-        {players.map((player, index) => (
-          <View
-            key={player.id}
-            style={styles.player}
-          >
-            <Field
-              value={player.name}
-              onChangeText={(name) =>
-                setPlayers((old) =>
-                  old.map((entry) =>
-                    entry.id === player.id
-                      ? {
-                          ...entry,
-                          name,
-                        }
-                      : entry
-                  )
-                )
-              }
-              placeholder={`Spieler ${index + 1}`}
-            />
-
-            <View style={styles.playerBottom}>
-              <Text style={styles.letters}>
-                {word.slice(0, player.fails)}
-                <Text style={styles.dim}>
-                  {word.slice(player.fails)}
-                </Text>
-              </Text>
-
-              <Button
-                title="Bail +1"
-                tone="pink"
-                compact
-                onPress={() =>
-                  fail(player.id)
-                }
-              />
-            </View>
-          </View>
-        ))}
-
-        <View style={styles.wrap}>
-          <Button
-            title="+ Spieler"
-            tone="dark"
-            compact
+        <View style={styles.actions}>
+          <SecondaryButton
+            title="Spieler"
+            icon="plus"
+            tone="glass"
+            size="sm"
             disabled={players.length >= 6}
             onPress={addPlayer}
           />
-          <Button
+          <SecondaryButton
             title="Reihenfolge mischen"
-            tone="dark"
-            compact
+            icon="shuffle"
+            tone="glass"
+            size="sm"
             onPress={() =>
               setPlayers(shuffle(players))
             }
           />
-          <Button
+          <SecondaryButton
             title="Battle reset"
-            tone="dark"
-            compact
+            icon="reset"
+            tone="glass"
+            size="sm"
             onPress={reset}
           />
         </View>
-      </Card>
+      </PosterCard>
 
-      <Card variant="cyan">
-        <Title small>Trick setzen</Title>
+      <Card>
+        <Title>Trick setzen</Title>
+        <Segmented
+          scroll
+          items={sport.levels.map(([entry]) => entry)}
+          value={level}
+          onChange={(entry) => setLevel(entry)}
+        />
 
-        <View style={styles.wrap}>
-          {sport.levels.map(([entry]) => (
-            <Pill
-              key={entry}
-              label={entry}
-              active={level === entry}
-              color={sport.color}
-              onPress={() => setLevel(entry)}
-            />
-          ))}
+        <View style={styles.trickCard}>
+          <Grad {...GRADIENTS.trick} radius={24} />
+          <Glow color={COLORS.cyan} opacity={0.28} size={260} style={{ right: -90, top: -110 }} />
+          <Tag label={current ? current.level : level} tone="dark" />
+          <Text
+            style={[styles.trickName, !current && { color: COLORS.mutedNum, fontSize: 40, lineHeight: 42 }]}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+          >
+            {current ? current.name : 'Noch kein Trick'}
+          </Text>
         </View>
-
-        {current ? (
-          <View style={styles.trickHero}>
-            <Text style={styles.trick}>
-              {current.name}
-            </Text>
-            <Muted>{current.level}</Muted>
-          </View>
-        ) : null}
 
         <Button
           title="Offline-Trick ziehen"
+          icon="dice"
           onPress={draw}
         />
-
-        <Button
+        <SecondaryButton
           title={
             aiBusy
               ? 'KI zieht…'
               : 'Extra: KI-Trick'
           }
-          tone="dark"
+          icon="chip"
+          iconColor={COLORS.cyan}
           disabled={aiBusy}
           onPress={drawAI}
         />
-
-        <Muted>
+        <Text style={[TYPE.caption, { textAlign: 'center' }]}>
           Die normalen Battle-Tricks kommen
           offline aus deinem Skill-Baum.
-        </Muted>
+        </Text>
       </Card>
 
-      <View style={styles.twoCol}>
-        <View style={styles.col}>
-          <Card variant="lime">
-            <Title small>Münzwurf</Title>
+      <View style={styles.bento}>
+        <Surface radius={RADII.cardSm} style={styles.bentoCard}>
+          <CoinArt letter={coin ? coin.charAt(0) : '?'} />
+          <Text style={TYPE.label}>Münzwurf</Text>
+          {coin ? (
+            <Text style={styles.tileResult}>{coin}</Text>
+          ) : (
+            <Text style={[TYPE.caption, { minHeight: 34 }]}>Wer startet die Runde?</Text>
+          )}
+          <SecondaryButton
+            title="Wer beginnt?"
+            tone="cyan"
+            size="sm"
+            onPress={() =>
+              setCoin(
+                Math.random() < 0.5
+                  ? 'Kopf'
+                  : 'Zahl'
+              )
+            }
+          />
+        </Surface>
 
-            {coin ? (
-              <Text style={styles.coin}>
-                {coin}
-              </Text>
-            ) : (
-              <Muted>
-                Wer startet die Runde?
-              </Muted>
-            )}
-
-            <Button
-              title="Wer beginnt?"
-              tone="ice"
-              onPress={() =>
-                setCoin(
-                  Math.random() < 0.5
-                    ? 'Kopf'
-                    : 'Zahl'
-                )
-              }
-            />
-          </Card>
-        </View>
-
-        <View style={styles.col}>
-          <Card variant="pink">
-            <Title small>Siege</Title>
-            <Text style={styles.winCount}>
-              {stats.wins || 0}
-            </Text>
-            <Muted>
-              Deine gespeicherten Battle-Siege.
-            </Muted>
-          </Card>
-        </View>
+        <Surface radius={RADII.cardSm} gradient={GRADIENTS.tileLime} style={styles.bentoCard}>
+          <IconTile name="trophy" size={64} iconSize={30} bg={COLORS.lime} color="#0B1404" radius={20} fillOpacity={0.35} />
+          <Text style={TYPE.label}>Siege</Text>
+          <Text style={[TYPE.number, { fontSize: 50, lineHeight: 52 }]}>{stats.wins || 0}</Text>
+          <Text style={[TYPE.caption, { fontSize: 11.5 }]}>Deine gespeicherten Battle-Siege.</Text>
+        </Surface>
       </View>
 
-      <Card variant="purple">
-        <Title small>Trick-Bingo 3×3</Title>
+      <Card>
+        <View style={styles.headRow}>
+          <Title>Trick-Bingo 3×3</Title>
+          <Text style={TYPE.label}>{doneCells} / 9</Text>
+        </View>
 
-        <View style={styles.grid}>
-          {bingo.map((item, index) => (
-            <Pressable
-              key={item.id}
-              onPress={() =>
-                setBingo((old) =>
-                  old.map((entry, i) =>
-                    i === index
-                      ? {
-                          ...entry,
-                          done: !entry.done,
-                        }
-                      : entry
+        <View>
+          <View style={styles.grid}>
+            {bingo.map((item, index) => (
+              <Pressable
+                key={item.id}
+                onPress={() =>
+                  setBingo((old) =>
+                    old.map((entry, i) =>
+                      i === index
+                        ? {
+                            ...entry,
+                            done: !entry.done,
+                          }
+                        : entry
+                    )
                   )
-                )
-              }
-              style={[
-                styles.cell,
-                item.done &&
-                  styles.cellDone,
-              ]}
-            >
-              <Text
-                numberOfLines={3}
-                style={[
-                  styles.cellText,
-                  item.done &&
-                    styles.cellDoneText,
+                }
+                style={({ pressed }) => [
+                  styles.cell,
+                  pressed && { opacity: 0.85 },
                 ]}
               >
-                {item.name}
-              </Text>
-            </Pressable>
-          ))}
+                {item.done ? <Grad {...GRADIENTS.lime} radius={20} /> : null}
+                {item.done ? (
+                  <AppIcon name="check" size={16} color={COLORS.onLime} strokeWidth={3} />
+                ) : (
+                  <View style={{ height: 16 }} />
+                )}
+                <Text
+                  numberOfLines={3}
+                  style={[
+                    styles.cellText,
+                    item.done && styles.cellDoneText,
+                  ]}
+                >
+                  {item.name}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {hasBingo() ? (
+            <View pointerEvents="none" style={styles.bingoWrap}>
+              <Sticker label="Bingo!" tone="pink" rotate={-8} size={38} style={styles.bingoSticker} />
+            </View>
+          ) : null}
         </View>
 
         {hasBingo() ? (
-          <>
-            <Text style={styles.bingo}>
-              BINGO!
-            </Text>
-            <Button
-              title="Sieg speichern"
-              onPress={recordWin}
-            />
-          </>
+          <Button
+            title="Sieg speichern"
+            icon="trophy"
+            onPress={recordWin}
+          />
         ) : null}
 
-        <Button
+        <SecondaryButton
           title="Neues Bingo"
-          tone="dark"
+          icon="grid"
           onPress={() =>
             setBingo(
               shuffle(tricks)
@@ -434,18 +459,22 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
         />
       </Card>
 
-      <Card variant="night">
-        <Title small>Kampf-Verlauf</Title>
-
+      <Card>
+        <Title>Kampf-Verlauf</Title>
         {history.length ? (
-          history.map((entry, index) => (
-            <Text
-              key={index}
-              style={styles.history}
-            >
-              {entry.at} · {entry.text}
-            </Text>
-          ))
+          history.map((entry, index) => {
+            const ai = String(entry.text || '').startsWith('KI-');
+            return (
+              <View key={`${entry.at}-${index}`} style={styles.historyRow}>
+                <View style={[styles.timeChip, ai && { backgroundColor: COLORS.cyanSoft }]}>
+                  <Text style={[styles.timeText, ai && { color: COLORS.cyanText }]}>{entry.at}</Text>
+                </View>
+                <Text style={styles.historyText} numberOfLines={2}>
+                  {entry.text}
+                </Text>
+              </View>
+            );
+          })
         ) : (
           <Muted>Noch nichts passiert.</Muted>
         )}
@@ -455,105 +484,147 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
 }
 
 const styles = StyleSheet.create({
-  stack: {
+  stack: { gap: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  poster: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  posterTitle: {
+    ...TYPE.display,
+    fontSize: 58,
+    lineHeight: 56,
+    marginTop: 20,
+  },
+  players: {
     gap: 10,
+    marginTop: 18,
   },
   player: {
-    gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.line,
-    paddingTop: 10,
+    padding: 12,
+    borderRadius: RADII.tile,
+    backgroundColor: 'rgba(3,5,10,0.42)',
+    gap: 12,
   },
-  playerBottom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
+  playerName: {
+    flex: 1,
+    minWidth: 0,
+    color: COLORS.text,
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+    paddingVertical: 6,
   },
   letters: {
-    color: COLORS.pink,
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: 3,
+    flexDirection: 'row',
+    gap: 6,
   },
-  dim: {
-    color: '#385068',
+  letter: {
+    flex: 1,
+    height: 44,
+    borderRadius: RADII.letter,
+    backgroundColor: '#0F182C',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  wrap: {
+  letterLost: {
+    boxShadow: '0 8px 20px -8px rgba(255,61,139,0.7)',
+  },
+  letterText: {
+    ...TYPE.display,
+    fontSize: 26,
+    lineHeight: 30,
+    paddingRight: 0,
+    color: '#2E3A58',
+  },
+  actions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 12,
   },
-  trickHero: {
-    backgroundColor: '#09131D',
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    borderRadius: 18,
-    padding: 12,
-    gap: 3,
+  trickCard: {
+    height: 150,
+    borderRadius: 24,
+    padding: 20,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
   },
-  trick: {
-    color: COLORS.text,
-    fontSize: 25,
-    fontWeight: '900',
-    fontStyle: 'italic',
+  trickName: {
+    ...TYPE.display,
+    fontSize: 62,
+    lineHeight: 58,
   },
-  twoCol: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  col: {
+  bento: { flexDirection: 'row', gap: 12 },
+  bentoCard: {
     flex: 1,
+    padding: 16,
+    gap: 12,
   },
-  coin: {
-    color: COLORS.ice,
-    fontSize: 28,
-    fontWeight: '900',
-  },
-  winCount: {
-    color: COLORS.volt,
-    fontSize: 36,
-    fontWeight: '900',
+  tileResult: {
+    ...TYPE.display,
+    fontSize: 34,
+    lineHeight: 34,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: '2%',
+    gap: 6,
   },
   cell: {
     width: '32%',
-    aspectRatio: 1,
-    backgroundColor: '#09131D',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: COLORS.lineSoft,
-    padding: 7,
+    flexGrow: 1,
+    height: 92,
+    borderRadius: RADII.stat,
+    backgroundColor: COLORS.tile,
+    padding: 12,
+    justifyContent: 'space-between',
+  },
+  cellText: {
+    fontFamily: FONTS.semibold,
+    color: '#C9D1DE',
+    fontSize: 13,
+    lineHeight: 16,
+  },
+  cellDoneText: {
+    color: COLORS.onLime,
+  },
+  bingoWrap: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cellDone: {
-    backgroundColor: COLORS.volt,
-    borderColor: COLORS.volt,
+  bingoSticker: {
+    height: 52,
+    paddingHorizontal: 22,
+    alignSelf: 'center',
+    boxShadow: '0 18px 30px -10px rgba(0,0,0,0.8)',
   },
-  cellText: {
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 6,
+    borderRadius: 999,
+    backgroundColor: COLORS.stat,
+  },
+  timeChip: {
+    height: 34,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: COLORS.raised,
+    justifyContent: 'center',
+  },
+  timeText: {
+    fontFamily: FONTS.bold,
+    fontSize: 12,
+    color: COLORS.text2,
+    fontVariant: ['tabular-nums'],
+  },
+  historyText: {
+    flex: 1,
+    fontFamily: FONTS.semibold,
+    fontSize: 14,
     color: COLORS.text,
-    fontSize: 11.5,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  cellDoneText: {
-    color: COLORS.bg,
-  },
-  bingo: {
-    color: COLORS.volt,
-    fontSize: 30,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  history: {
-    color: COLORS.text,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.line,
   },
 });
