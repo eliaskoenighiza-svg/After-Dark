@@ -5,6 +5,8 @@ import { Card, Button, Muted, Notice, Title } from '../components/UI';
 import { COLORS, FONTS, GRADIENTS, RADII, TYPE } from '../theme';
 import AppIcon from '../components/AppIcon';
 import { IconTile, PosterCard, SecondaryButton, Sticker, Surface, Tag } from '../design/kit';
+import { Burst, LevelCelebration, PopIn, ThinkingOrbit } from '../design/motion';
+import { haptic } from '../design/haptics';
 import { effectiveLevels, effectiveSlots, nextRecommendedSkill } from '../services/skills';
 import { localGet, localSet, sharedGet, sharedSet } from '../storage';
 import { askAI } from '../services/ai';
@@ -289,6 +291,22 @@ export default function SkillsTab({ sport, profile, stats, setStats }) {
   // Night Ride v2 – reine Anzeige-Zustände (kein Speichern)
   const [shownLevel, setShownLevel] = useState(null);
   const [lineWidth, setLineWidth] = useState(0);
+  const [pop, setPop] = useState(null);
+  const [levelDone, setLevelDone] = useState(null);
+
+  // Abhaken mit Feier: ruft unverändert toggle(name) auf, die Animation ist reine Anzeige
+  const markDone = (name) => {
+    const entry = levels.find(([, items]) => items.some((x) => x.name === name));
+    const willComplete =
+      !!entry &&
+      !done[name] &&
+      entry[1].every((x) => x.name === name || done[x.name]);
+    if (!done[name]) haptic.success();
+    else haptic.tap();
+    toggle(name);
+    setPop({ name, n: Date.now() });
+    if (willComplete) setLevelDone(entry[0]);
+  };
 
   const activeLevel =
     shownLevel && levels.some(([level]) => level === shownLevel)
@@ -440,13 +458,24 @@ export default function SkillsTab({ sport, profile, stats, setStats }) {
                       ]}
                     >
                       {isDone ? (
-                        <AppIcon name="check" size={24} color={COLORS.onLime} strokeWidth={3} />
+                        pop?.name === item.name ? (
+                          <PopIn key={pop.n} from={0.2}>
+                            <AppIcon name="check" size={24} color={COLORS.onLime} strokeWidth={3} />
+                          </PopIn>
+                        ) : (
+                          <AppIcon name="check" size={24} color={COLORS.onLime} strokeWidth={3} />
+                        )
                       ) : big ? (
                         <AppIcon name="play" size={24} color={COLORS.onLime} fillOpacity={1} />
                       ) : (
                         <Text style={[TYPE.number, { fontSize: 20, color: '#5E6A84' }]}>{i + 1}</Text>
                       )}
                     </Pressable>
+                    {isDone && pop?.name === item.name ? (
+                      <View pointerEvents="none" style={{ position: 'absolute', left: x - 70, top: y - 70, width: 140, height: 140 }}>
+                        <Burst key={pop.n} size={140} />
+                      </View>
+                    ) : null}
                     <Text
                       numberOfLines={2}
                       style={[
@@ -472,10 +501,7 @@ export default function SkillsTab({ sport, profile, stats, setStats }) {
               <Tag label="KI-Lexikon" tone="cyan" icon="chip" />
             </View>
             {lex === 'Lädt…' ? (
-              <View style={styles.row}>
-                <ActivityIndicator color={COLORS.cyan} size="small" />
-                <Text style={[TYPE.caption, { color: COLORS.cyanText }]}>Lädt…</Text>
-              </View>
+              <ThinkingOrbit label="KI-Lexikon lädt…" />
             ) : (
               <Text style={styles.body}>{lex}</Text>
             )}
@@ -484,7 +510,7 @@ export default function SkillsTab({ sport, profile, stats, setStats }) {
                 {done[open] ? (
                   <SecondaryButton title="Als offen markieren" icon="reset" onPress={() => toggle(open)} />
                 ) : (
-                  <Button title="Geschafft" icon="check" compact onPress={() => toggle(open)} />
+                  <Button title="Geschafft" icon="check" compact onPress={() => markDone(open)} />
                 )}
               </View>
               <SecondaryButton title="Als Wochenziel" icon="target" onPress={() => setWeekly(open)} />
@@ -582,6 +608,8 @@ export default function SkillsTab({ sport, profile, stats, setStats }) {
         )}
         <Button title="Plan per KI erstellen" icon="chip" onPress={makePlan} />
       </Card>
+
+      <LevelCelebration level={levelDone} onDone={() => setLevelDone(null)} />
     </View>
   );
 }

@@ -1,0 +1,13 @@
+After[Dark V10 Reparatur
+
+Enthaelt nur fehlende V10-Basisdateien:
+- src/design/motion.js
+- Night Badge Profilbild
+- Night Badge / Battle / Schwarzwald Animationen
+
+Diese ZIP ueber den bestehenden After-Dark-Ordner kopieren.
+Danach im Projektordner ausfuehren:
+  npx.cmd expo install expo-video
+  npx.cmd expo start -c
+
+Parks, Live-Standort, Supabase und EAS-Dateien werden nicht ersetzt.

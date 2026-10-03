@@ -1,0 +1,15 @@
+After[Dark V14 – Swipe + Parks Reparatur
+
+Geaendert:
+- Tab-Wischen nach links UND rechts funktioniert wieder auch auf Parks.
+- Swipe reagiert leichter.
+- Bottom-Navigation auf Android deutlich nach oben gesetzt, damit sie nicht im Samsung-Systembalken liegt.
+- Parks: echte Karte wieder UNTEN bei "Spots in der Naehe".
+- Karte auf 620 px vergroessert.
+- Parks-Suche bleibt in After[Dark (OpenStreetMap/Cloudflare-Proxy), kein Google-Maps-Sprung mehr.
+- Live-Standort auf der Karte bleibt erhalten.
+- Karte/Liste-Umschalter sitzt direkt bei den Suchergebnissen.
+
+Wichtig:
+- Bestehende app.config.js, eas.json, .env und Cloud-Konfiguration werden von diesem Patch NICHT ersetzt.
+- INSTALL_V14.bat stellt nur sicher, dass expo-location, react-native-webview und expo-updates im lokalen Projekt vorhanden sind.

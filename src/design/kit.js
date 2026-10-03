@@ -1,9 +1,12 @@
 import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import AppIcon from '../components/AppIcon';
 import { COLORS, FONTS, GRADIENTS, RADII, SHADOWS, TYPE } from '../theme';
 import { Grad } from './Grad';
+import { FadeSlideIn } from './motion';
+import { SkyBackdrop } from './ambient';
+import { haptic } from './haptics';
 
 // Night Ride v2 – reine UI-Bausteine. Keine Daten, kein State außer Press-Feedback.
 
@@ -50,16 +53,24 @@ export function PosterCard({ children, gradient = GRADIENTS.coach, glow = 'rgba(
   );
 }
 
-export function ScreenPoster({ title, subtitle, art = null, height = 236 }) {
+export function ScreenPoster({ title, subtitle, art = null, height = 236, phase, accent, winter = false, parallax, from = 'right' }) {
+  const artShift = parallax
+    ? { transform: [{ translateX: parallax.interpolate({ inputRange: [-400, 400], outputRange: [-90, 90], extrapolate: 'clamp' }) }] }
+    : null;
   return (
     <View style={[styles.screenPoster, { height }]}>
-      {art ? <View pointerEvents="none" style={StyleSheet.absoluteFill}>{art}</View> : null}
-      <View style={styles.screenPosterText}>
+      {phase ? <SkyBackdrop phase={phase} accent={accent || COLORS.lime} height={height} winter={winter} /> : null}
+      {art ? (
+        <FadeSlideIn from={from} distance={60} duration={650} style={StyleSheet.absoluteFill}>
+          <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, artShift]}>{art}</Animated.View>
+        </FadeSlideIn>
+      ) : null}
+      <FadeSlideIn distance={18} delay={80} style={styles.screenPosterText}>
         <Text style={styles.screenTitle} numberOfLines={1} adjustsFontSizeToFit>
           {title}
         </Text>
         {subtitle ? <Text style={styles.screenSub}>{subtitle}</Text> : null}
-      </View>
+      </FadeSlideIn>
     </View>
   );
 }
@@ -78,6 +89,7 @@ export function PrimaryButton({ title, onPress, disabled = false, icon = 'arrow'
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={disabled ? undefined : haptic.tap}
       disabled={disabled}
       accessibilityRole="button"
       style={({ pressed }) => [

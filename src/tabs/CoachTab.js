@@ -5,8 +5,11 @@ import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/U
 import AppIcon from '../components/AppIcon';
 import { Grad } from '../design/Grad';
 import { DiceArt, SessionDial } from '../design/art';
+import { ThinkingOrbit } from '../design/motion';
 import { Bubble, IconTile, PosterCard, ProgressRing, SecondaryButton, Segmented, Sticker, Surface, Tag } from '../design/kit';
 import { COLORS, FONTS, GRADIENTS, RADII, TYPE } from '../theme';
+import { EmptyScene } from '../design/ambient';
+import { openShare } from '../design/share';
 import { effectiveSlots, loadSkillContext } from '../services/skills';
 import { localGet, localSet } from '../storage';
 import { checkAIConnection, coachAI, dailyTrickAI } from '../services/ai';
@@ -324,8 +327,7 @@ export default function CoachTab({ sport, stats, setStats, connection = null }) 
           </>
         ) : (
           <View style={styles.loadingRow}>
-            <ActivityIndicator color={COLORS.cyan} />
-            <Text style={[styles.posterTitle, { color: COLORS.mutedNum, fontSize: 40, lineHeight: 42 }]}>Lädt…</Text>
+            <ThinkingOrbit label="Trick des Tages wird gewählt…" size={40} />
           </View>
         )}
       </PosterCard>
@@ -352,13 +354,20 @@ export default function CoachTab({ sport, stats, setStats, connection = null }) 
         </Surface>
       </View>
 
+      <SecondaryButton
+        title="Meine Woche als Story teilen"
+        icon="send"
+        tone="glass"
+        onPress={() => openShare({ kind: 'week', stats, sub: `${doneCount} Skills geschafft` })}
+      />
+
       <Card>
         <View style={styles.headRow}>
           <Title>Session</Title>
           {running ? <Tag label="Läuft" tone="lime" dot /> : <Tag label="Bereit" tone="neutral" />}
         </View>
 
-        <SessionDial minutes={Math.floor(elapsed / 60)} running={running}>
+        <SessionDial minutes={Math.floor(elapsed / 60)} seconds={elapsed} running={running}>
           <Text style={[TYPE.number, { fontSize: 58, lineHeight: 60 }]}>{fmt(elapsed)}</Text>
           <Text style={TYPE.label}>Trainingszeit</Text>
         </SessionDial>
@@ -497,10 +506,7 @@ export default function CoachTab({ sport, stats, setStats, connection = null }) 
 
         {coachBusy ? (
           <Bubble tone="cyan">
-            <View style={styles.row}>
-              <ActivityIndicator color={COLORS.cyan} size="small" />
-              <Text style={[TYPE.caption, { color: COLORS.cyanText }]}>Der Coach denkt nach…</Text>
-            </View>
+            <ThinkingOrbit label="Der Coach denkt nach…" />
           </Bubble>
         ) : null}
 
@@ -564,7 +570,7 @@ export default function CoachTab({ sport, stats, setStats, connection = null }) 
             ))}
           </ScrollView>
         ) : (
-          <Text style={TYPE.caption}>Noch keine Notizen gespeichert.</Text>
+          <EmptyScene kind="notes" accent={COLORS.cyan} />
         )}
       </Card>
 

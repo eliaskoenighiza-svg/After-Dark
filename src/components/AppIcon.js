@@ -10,6 +10,8 @@ const ICONS = {
   battle: { d: 'M3 5l7 7-7 7M21 5l-7 7 7 7', open: true },
   parks: { d: 'M2 20h20M3 20V7c7 0 11 5 11 13zM16 20v-6h5v6' },
   more: { d: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z' },
+  feed: { d: 'M4 3h16v18H4zM8 7h8M8 11h8M8 15h5M17.5 16.5l3 1.8-3 1.7z' },
+  gear: { d: 'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM12 2v3M12 19v3M4.9 4.9L7 7M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1', open: true },
   crew: { d: 'M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3.3 2.7-6 6-6s6 2.7 6 6zM15 14.1c.3 0 .7-.1 1-.1 3.3 0 6 2.7 6 6h-7' },
   chat: { d: 'M3 4h18v12H10l-5 4v-4H3z' },
   memories: { d: 'M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6' },

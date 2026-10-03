@@ -1,0 +1,20 @@
+After[Dark – Profilbilder + Animationen + neuer Ladebildschirm
+===============================================================
+
+Dieser Patch ist absichtlich klein und überschreibt KEINE Parks-/Live-Standort-/EAS-Dateien.
+
+Neu:
+- 5 neue Profilbilder: Level Up, Crew, Spot, Battle, Schwarzwald
+- 3 neue Badge-Animationen: Level Up, Crew, Spot
+- neuer Video-Ladebildschirm
+- Profilbild-Auswahl in After[Dark: auf Profil tippen -> Badge oder eigenes Foto wählen
+- persönliche Auswahl wird lokal gespeichert
+
+Einbauen:
+1. Inhalt des Ordners "After-Dark" in deinen bestehenden After-Dark-Projektordner kopieren.
+2. Vorhandene Dateien ersetzen.
+3. App testen.
+
+Kein neues npm-Paket nötig, sofern Night Ride v2 bereits installiert ist (expo-video ist dort schon vorhanden).
+Da nur JavaScript und Assets geändert werden, kann diese Änderung mit EAS Update verteilt werden,
+solange deine installierte Basis-App bereits expo-video enthält.

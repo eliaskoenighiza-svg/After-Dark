@@ -4,8 +4,12 @@ import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/U
 import AppIcon from '../components/AppIcon';
 import { Glow, Grad } from '../design/Grad';
 import { CoinArt } from '../design/art';
+import { CoinFlip, LetterTile, SlamIn, ThinkingOrbit } from '../design/motion';
 import { Avatar, IconTile, PosterCard, SecondaryButton, Segmented, Sticker, Surface, Tag } from '../design/kit';
+import { BadgeVideo } from '../design/badges';
 import { COLORS, FONTS, GRADIENTS, RADII, TYPE } from '../theme';
+import { EmptyScene } from '../design/ambient';
+import { openShare } from '../design/share';
 import { allTricks } from '../data/sports';
 import { askAI } from '../services/ai';
 import { localSet } from '../storage';
@@ -190,6 +194,7 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
     }
   };
 
+  const [flipKey, setFlipKey] = useState(0);
   const AVATARS = [GRADIENTS.avatarCyan, GRADIENTS.avatarViolet, GRADIENTS.avatarWhite, GRADIENTS.avatarLime];
   const AVATAR_INK = ['#04202A', '#140C3A', '#060A10', '#0B1404'];
   const doneCells = bingo.filter((item) => item.done).length;
@@ -202,7 +207,10 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
 
       <PosterCard gradient={GRADIENTS.battle} glow="rgba(255,61,139,0.35)" style={styles.poster}>
         <View style={{ paddingHorizontal: 6 }}>
-          <Sticker label="Letter-Battle" tone="pink" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Sticker label="Letter-Battle" tone="pink" />
+            <BadgeVideo id="battle" size={64} />
+          </View>
           <Text style={styles.posterTitle} numberOfLines={1} adjustsFontSizeToFit>
             {word}-Battle
           </Text>
@@ -266,16 +274,39 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
                 </View>
                 <View style={styles.letters}>
                   {word.split('').map((letter, i) => (
-                    <View key={`${letter}-${i}`} style={[styles.letter, i < player.fails && styles.letterLost]}>
-                      {i < player.fails ? <Grad {...GRADIENTS.pink} radius={12} /> : null}
-                      <Text style={[styles.letterText, i < player.fails && { color: '#FFFFFF' }]}>{letter}</Text>
-                    </View>
+                    <LetterTile
+                      key={`${letter}-${i}`}
+                      letter={letter}
+                      lost={i < player.fails}
+                      style={styles.letter}
+                      lostStyle={styles.letterLost}
+                      textStyle={styles.letterText}
+                      lostLayer={<Grad {...GRADIENTS.pink} radius={12} />}
+                    />
                   ))}
                 </View>
               </View>
             );
           })}
         </View>
+
+        {(() => {
+          const alive = players.filter((p) => word.length - p.fails > 0);
+          if (players.length < 2 || alive.length !== 1) return null;
+          const name = (alive[0].name || 'Spieler').trim() || 'Spieler';
+          return (
+            <SlamIn style={styles.winnerRow}>
+              <Sticker label={`${name} gewinnt`} tone="lime" rotate={-4} />
+              <SecondaryButton
+                title="Sieger-Karte"
+                icon="send"
+                tone="light"
+                size="sm"
+                onPress={() => openShare({ kind: 'battle', winner: name, sub: `${word}-Battle · ${players.length} Spieler` })}
+              />
+            </SlamIn>
+          );
+        })()}
 
         <View style={styles.actions}>
           <SecondaryButton
@@ -318,6 +349,7 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
           <Grad {...GRADIENTS.trick} radius={24} />
           <Glow color={COLORS.cyan} opacity={0.28} size={260} style={{ right: -90, top: -110 }} />
           <Tag label={current ? current.level : level} tone="dark" />
+          {aiBusy ? <ThinkingOrbit label="KI zieht einen Trick…" /> : null}
           <Text
             style={[styles.trickName, !current && { color: COLORS.mutedNum, fontSize: 40, lineHeight: 42 }]}
             numberOfLines={2}
@@ -351,7 +383,9 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
 
       <View style={styles.bento}>
         <Surface radius={RADII.cardSm} style={styles.bentoCard}>
-          <CoinArt letter={coin ? coin.charAt(0) : '?'} />
+          <CoinFlip key={flipKey} animate={flipKey > 0}>
+            <CoinArt letter={coin ? coin.charAt(0) : '?'} />
+          </CoinFlip>
           <Text style={TYPE.label}>Münzwurf</Text>
           {coin ? (
             <Text style={styles.tileResult}>{coin}</Text>
@@ -362,13 +396,14 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
             title="Wer beginnt?"
             tone="cyan"
             size="sm"
-            onPress={() =>
+            onPress={() => {
               setCoin(
                 Math.random() < 0.5
                   ? 'Kopf'
                   : 'Zahl'
-              )
-            }
+              );
+              setFlipKey((k) => k + 1);
+            }}
           />
         </Surface>
 
@@ -429,7 +464,9 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
 
           {hasBingo() ? (
             <View pointerEvents="none" style={styles.bingoWrap}>
-              <Sticker label="Bingo!" tone="pink" rotate={-8} size={38} style={styles.bingoSticker} />
+              <SlamIn>
+                <Sticker label="Bingo!" tone="pink" rotate={-8} size={38} style={styles.bingoSticker} />
+              </SlamIn>
             </View>
           ) : null}
         </View>
@@ -439,6 +476,15 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
             title="Sieg speichern"
             icon="trophy"
             onPress={recordWin}
+          />
+        ) : null}
+
+        {hasBingo() ? (
+          <SecondaryButton
+            title="Sieger-Karte teilen"
+            icon="send"
+            tone="pink"
+            onPress={() => openShare({ kind: 'battle', title: 'Bingo!', sub: `Trick-Bingo · ${stats.wins || 0} Siege` })}
           />
         ) : null}
 
@@ -476,7 +522,7 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
             );
           })
         ) : (
-          <Muted>Noch nichts passiert.</Muted>
+          <EmptyScene kind="history" accent={COLORS.pink} />
         )}
       </Card>
     </View>
@@ -484,6 +530,13 @@ export default function BattleTab({ sport, profile, stats, setStats }) {
 }
 
 const styles = StyleSheet.create({
+  winnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    paddingHorizontal: 6,
+  },
   stack: { gap: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },

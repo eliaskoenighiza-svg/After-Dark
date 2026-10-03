@@ -1,31 +1,83 @@
-After[Dark – Night Ride v2 (Design-Update)
-==========================================
+After[Dark – Night Ride v2 (Design-Update, Animationen, Badges, 10 Design-Ideen)
+=====================================================================
 
-Was ist das?
-Das komplette neue Design aus dem Canvas, umgesetzt im Code.
-Geändert wurden nur Darstellung und Layout. Logik, Speicherung,
-Supabase, Cloudflare-KI, Google Maps und .env sind unverändert.
+Geändert wurden nur Darstellung, Layout und Animation. Logik,
+Speicherung, Supabase, Cloudflare-KI, Google Maps und .env sind
+unverändert.
 
 Einbauen
 1. Projektordner sichern (Kopie anlegen).
-2. Den Inhalt dieses Ordners "After-Dark" in deinen Projektordner
-   kopieren und vorhandene Dateien ersetzen.
-3. Im Projektordner einmal ausführen:
-      npm install
-   (neu ist nur das Paket expo-font, Version ~57.0.4)
-4. App wie gewohnt starten (START_AFTER_DARK.bat) und mit -c den
-   Cache leeren, falls alte Styles hängen:  npx expo start -c
+2. Inhalt dieses Ordners "After-Dark" in den Projektordner kopieren
+   und vorhandene Dateien ersetzen.
+3. Im Projektordner einmal:  npm install
+   (neu: expo-font, expo-video, expo-haptics, expo-sharing,
+    react-native-view-shot – alle passend zu SDK 57 eingetragen)
+4. Starten mit:  npx expo start -c
+
+Neu in dieser Version
+- src/design/LoadingScreen.js: animierter Night-Badge-Ladebildschirm
+  (Mond geht auf, Lime-Ring zeichnet sich, Textring dreht sich,
+  Sterne funkeln). Läuft mindestens 2,6 Sekunden.
+
+Neu: App-Animationen (src/design/motion.js)
+- Tab-Wechsel: Lime-Kapsel poppt, Poster-Grafik gleitet rein
+- Skill geschafft: Punkt poppt + Funkenstoß
+- Level komplett: Vollbild mit Sticker-Knall und Konfetti
+- Session: Lauflicht im Zifferblatt + atmender Lichthof
+- Battle: Buchstabe klappt pink um, Bingo-Slam, 3D-Münzwurf
+- KI denkt: kreisende Cyan-Punkte statt Ladekreis
+- Parks: Spot-Karten gleiten nacheinander rein, Leerzustand mit Mond
+- Offline: Mond hinter vorbeiziehender Wolke
+Alle Animationen laufen auf dem nativen Treiber und werden bei
+"Bewegung reduzieren" (Android-Einstellung) abgeschaltet.
+
+Neu: Profilbilder & Badge-Animationen (src/design/badges.js)
+- assets/profile/   6 runde Badges (PNG, 512 px, transparente Ecken)
+- assets/animations/ 6 Loop-Videos (MP4, 480 px, stumm, je ~0,3 MB)
+- PROFILE_IMAGES / BADGE_ANIMATIONS: zentrale require-Liste
+- <BadgeImage id="crew" size={72}/> und <BadgeVideo id="crew" size={120}/>
+  ids: nightbadge, levelup, crew, spot, battle, schwarzwald
+Eingebaut in:
+- Mehr: neue Karte "Abzeichen" – antippen spielt die Animation groß ab
+- Mehr: Crew-Kachel mit animiertem Crew-Badge
+- Crew: Crew-Cloud-Karte mit Crew-Badge
+- Battle: Battle-Badge im Poster
+- Parks: Spot-Badge im Leerzustand
+- Level geschafft: Level-Up-Badge über dem Sticker
+Videos nutzen expo-video (expo-av gibt es in SDK 57 nicht mehr).
+Bei "Bewegung reduzieren" oder ohne expo-video wird das PNG gezeigt.
+Expo Go: läuft direkt. Eigener Dev-Build: einmal neu bauen,
+weil expo-video ein natives Modul ist.
+Ladebildschirm bleibt die native Animation (schärfer und flüssiger
+als ein Video, keine Extra-MB).
+
+Neu: 10 Design-Ideen
+1  Tageszeit-Himmel: Poster-Himmel + Mond wechseln (Morgengrauen,
+   Tag, Dämmerung, Nacht). Coach-Untertitel zeigt die Tageszeit.
+2  Sport-Farbwelt: Licht + Akzentlinie im Poster in der Sportfarbe.
+3  Winter-Modus (Saison Winter): leiser Schneefall im Hintergrund,
+   Rampen werden Schneehügel.
+4  Haptik: Tab, Button, Trick geschafft, Münzwurf, Buchstabe,
+   Level, neues Abzeichen (expo-haptics).
+5  Wischen zwischen Tabs mit Parallax (auf Parks aus, wegen Karte).
+6  Leerzustände mit Mond-Szene: Chat, Memories, Notizen,
+   Battle-Verlauf, Crew draußen.
+7  Story-Karten 1080x1920 teilen: Level geschafft, Battle-Sieger
+   (S.K.A.T.E. + Bingo), "Meine Woche" (Coach), Abzeichen.
+8  Badge als Profilbild: Mehr > Abzeichen > "Als Profilbild".
+   Gespeichert unter eigenem Schlüssel ui:avatarBadge. Das Foto im
+   Profil bleibt erhalten ("Wieder Foto nutzen").
+9  Abzeichen freischalten (aus vorhandenen Stats, nur gelesen):
+   Level Up 8 Tricks · Battle 1. Sieg · Spot 60 Min. · Crew 3 Tage
+   Streak · Schwarzwald 25 Tricks. Neu erreicht -> Vollbild.
+   Merker unter ui:badgesSeen.
+10 Schwarzwald-Karte: grüner Nachtstil + Tannen. Automatisch, wenn
+   die Karte im Schwarzwald steht, sonst Schalter "Schwarzwald"
+   oben links (ui:mapTheme).
+Neue Dateien: src/design/ambient.js, share.js, haptics.js
+Bestehende Speicherwerte, Supabase, KI und Maps-Suche unverändert.
+Expo Go: läuft direkt. Eigener Dev-Build: einmal neu bauen.
 
 Wichtig
-- SETUP_KI_MAPS.bat NICHT ausführen (überschreibt die Cloudflare-URL
-  in .env.local).
+- SETUP_KI_MAPS.bat NICHT ausführen (überschreibt die Cloudflare-URL).
 - Nichts wurde committet oder gepusht.
-
-Neue Dateien
-- assets/fonts/  (Archivo + Geist, OFL-Lizenz liegt bei)
-- src/design/    (Farbverläufe, Grafiken, UI-Bausteine, Karten-Stil)
-
-Parks
-- Der Lime-Hauptbutton "Websuche mit Google Maps" öffnet jetzt die
-  echte Google-Maps-Suche. Die KI-Anlagensuche ist nur noch
-  zweiter Button (mit Cloudflare/Gemma derzeit ohne Websuche).

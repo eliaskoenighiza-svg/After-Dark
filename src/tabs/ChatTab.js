@@ -4,6 +4,7 @@ import AppIcon from '../components/AppIcon';
 import { Bubble, Tag } from '../design/kit';
 import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/UI';
 import { COLORS, FONTS, TYPE } from '../theme';
+import { EmptyScene } from '../design/ambient';
 import { localGet, localSet, sharedGet, sharedSet } from '../storage';
 import {
   cloudConfigured,
@@ -399,7 +400,7 @@ export default function ChatTab({ profile }) {
             );
           })
         ) : (
-          <Muted>Noch keine Nachrichten.</Muted>
+          <EmptyScene kind="chat" accent={COLORS.pink} />
         )}
 
         <View style={styles.composer}>

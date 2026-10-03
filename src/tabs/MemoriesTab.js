@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import AppIcon from '../components/AppIcon';
 import { Grad } from '../design/Grad';
-import { PolaroidArt } from '../design/art';
 import { SecondaryButton, Segmented, Tag } from '../design/kit';
 import { Card, Button, Muted, Notice, Pill, Title } from '../components/UI';
 import { COLORS, FONTS, RADII, SHADOWS } from '../theme';
+import { EmptyScene } from '../design/ambient';
 import { localGet, localSet, sharedGet, sharedSet } from '../storage';
 import { pickAndResizeImage, persistImage } from '../services/media';
 import {
@@ -19,7 +19,6 @@ import {
 } from '../services/supabase';
 
 const today = () => new Date().toISOString().slice(0, 10);
-const MEMORY_LIMIT = 100;
 
 export default function MemoriesTab({ profile }) {
   const [scope, setScope] = useState('private');
@@ -30,7 +29,7 @@ export default function MemoriesTab({ profile }) {
   const [crewId, setCrewId] = useState(null);
   const [cloudUserId, setCloudUserId] = useState(null);
 
-  const max = MEMORY_LIMIT;
+  const max = scope === 'private' ? 12 : 9;
 
   const loadLocal = async (scopeValue = scope) => {
     const key = scopeValue === 'private'
@@ -97,7 +96,7 @@ export default function MemoriesTab({ profile }) {
     const result = await getMemoriesCloud(
       scopeValue,
       targetCrewId,
-      MEMORY_LIMIT
+      scopeValue === 'private' ? 12 : 50
     );
 
     if (!result.ok) {
@@ -350,8 +349,7 @@ export default function MemoriesTab({ profile }) {
       {!items.length ? (
         <Card>
           <View style={{ alignItems: 'center', gap: 10, paddingVertical: 10 }}>
-            <PolaroidArt />
-            <Muted>Noch keine Bilder.</Muted>
+            <EmptyScene kind="memories" accent={COLORS.blue} />
           </View>
         </Card>
       ) : null}

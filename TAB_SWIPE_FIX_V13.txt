@@ -1,0 +1,11 @@
+After[Dark Tab Swipe Fix V13
+
+- Haupttabs reagieren deutlich früher auf horizontales Wischen.
+- Wischschwelle von 90 px auf 52 px reduziert.
+- Richtungs-Erkennung toleranter, damit links/rechts leichter greift.
+- Bottom-Navigation kann jetzt selbst nach links/rechts gewischt werden.
+- In Parks bleibt das Wischen im Inhaltsbereich deaktiviert, damit die Karte normal verschoben werden kann.
+  Dort einfach unten über die Tab-Leiste wischen, um zum vorherigen/nächsten Tab zu wechseln.
+- Tippen auf die Tabs funktioniert unverändert.
+
+Basiert auf Claude Design V12 SAFE.

@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Animated,
   Image,
-  ImageBackground,
+  PanResponder,
+  Platform,
   Pressable,
   ScrollView,
   StatusBar,
@@ -16,6 +18,13 @@ import SportIcon from './src/components/SportIcon';
 import { Button, Card, Field, Muted, Title } from './src/components/UI';
 import { COLORS, FONT_FILES, FONTS, GRADIENTS, RADII, SHADOWS, TYPE } from './src/theme';
 import { Grad, Glow } from './src/design/Grad';
+import LoadingScreen from './src/design/LoadingScreen';
+import { CloudMoon, PopIn } from './src/design/motion';
+import { BadgeImage, BadgeShelf, BadgeUnlockWatcher, BadgeVideo } from './src/design/badges';
+import { SnowFall, useSkyPhase, PHASE_LABEL } from './src/design/ambient';
+import { openShare, ShareHost } from './src/design/share';
+import { haptic } from './src/design/haptics';
+import { AccentContext, accentFor, useAccent } from './src/design/accent';
 import {
   Avatar,
   IconTile,
@@ -56,12 +65,15 @@ import ChatTab from './src/tabs/ChatTab';
 import MemoriesTab from './src/tabs/MemoriesTab';
 import ParksTab from './src/tabs/ParksTab';
 import CrewTab from './src/tabs/CrewTab';
+import FeedTab from './src/tabs/FeedTab';
+import GearTab from './src/tabs/GearTab';
 
 const PRIMARY_TABS = [
   ['coach', 'coach', 'Coach'],
   ['skills', 'skills', 'Skills'],
   ['battle', 'battle', 'Battle'],
   ['parks', 'parks', 'Parks'],
+  ['feed', 'feed', 'Feed'],
   ['more', 'more', 'Mehr'],
 ];
 
@@ -79,6 +91,7 @@ const TAB_GLOW = {
   skills: COLORS.lime,
   battle: COLORS.pink,
   parks: null,
+  feed: COLORS.cyan,
   more: COLORS.violet,
 };
 
@@ -331,7 +344,11 @@ function ConnectionTiles({
     <View style={styles.connGrid}>
       <View style={styles.connTile}>
         <View style={styles.connTileTop}>
-          <IconTile name="chip" size={42} iconSize={20} gradient={GRADIENTS.avatarCyan} color="#04202A" radius={14} />
+          {aiOnline ? (
+            <IconTile name="chip" size={42} iconSize={20} gradient={GRADIENTS.avatarCyan} color="#04202A" radius={14} />
+          ) : (
+            <CloudMoon size={42} />
+          )}
           <View style={[styles.connDot, { backgroundColor: aiOnline ? COLORS.lime : COLORS.pink, boxShadow: `0 0 12px ${aiOnline ? COLORS.lime : COLORS.pink}` }]} />
         </View>
         <View style={{ gap: 4 }}>
@@ -353,7 +370,11 @@ function ConnectionTiles({
 
       <View style={styles.connTile}>
         <View style={styles.connTileTop}>
-          <IconTile name="cloud" size={42} iconSize={20} gradient={GRADIENTS.avatarViolet} color="#140C3A" radius={14} />
+          {cloudOnline ? (
+            <IconTile name="cloud" size={42} iconSize={20} gradient={GRADIENTS.avatarViolet} color="#140C3A" radius={14} />
+          ) : (
+            <CloudMoon size={42} />
+          )}
           <View style={[styles.connDot, { backgroundColor: cloudOnline ? COLORS.lime : COLORS.pink, boxShadow: `0 0 12px ${cloudOnline ? COLORS.lime : COLORS.pink}` }]} />
         </View>
         <View style={{ gap: 4 }}>
@@ -431,6 +452,7 @@ function MoreHome({
   setPage,
   connectionProps,
   onProfilePress,
+  badgeProps = {},
 }) {
   const [liveCount, setLiveCount] = useState(0);
 
@@ -486,7 +508,11 @@ function MoreHome({
         style={styles.profileCard}
       >
         <View>
-          <Avatar uri={profile.avatarUri} size={60} />
+          {badgeProps.avatarBadge ? (
+            <BadgeImage id={badgeProps.avatarBadge} size={60} />
+          ) : (
+            <Avatar uri={profile.avatarUri} size={60} />
+          )}
           <View style={styles.profileBadge}>
             <AppIcon name="camera" size={12} color={COLORS.onLime} strokeWidth={2.6} />
           </View>
@@ -501,6 +527,19 @@ function MoreHome({
           <AppIcon name="chevron" size={16} color={COLORS.text} />
         </View>
       </PressSurface>
+
+      <Card>
+        <View style={styles.headRow}>
+          <Title>Abzeichen</Title>
+          <Tag label="Antippen = Animation" tone="neutral" />
+        </View>
+        <BadgeShelf
+          stats={badgeProps.stats}
+          avatarBadge={badgeProps.avatarBadge}
+          onSetAvatar={badgeProps.onSetAvatar}
+          onShare={(b) => openShare({ kind: 'badge', badge: b.id, name: b.name, accent: b.color, sub: b.goal })}
+        />
+      </Card>
 
       <Card>
         <View style={styles.headRow}>
@@ -531,14 +570,16 @@ function MoreHome({
             <Text style={styles.crewTitle}>Crew</Text>
             <Text style={styles.crewSub}>Deine Leute · Wer ist gerade draußen?</Text>
           </View>
-          <View style={[styles.roundBtn, { backgroundColor: 'rgba(255,255,255,0.14)' }]}>
-            <AppIcon name="arrow" size={16} color={COLORS.text} />
-          </View>
+          <BadgeVideo id="crew" size={64} />
         </View>
         <View style={styles.headRow}>
           <View style={{ flexDirection: 'row', paddingLeft: 12 }}>
             <View style={{ marginLeft: -12 }}>
-              <Avatar uri={profile.avatarUri} size={40} ring="#2A1F5C" />
+              {badgeProps.avatarBadge ? (
+                <BadgeImage id={badgeProps.avatarBadge} size={40} ring="#2A1F5C" />
+              ) : (
+                <Avatar uri={profile.avatarUri} size={40} ring="#2A1F5C" />
+              )}
             </View>
             <View style={{ marginLeft: -12 }}>
               <Avatar size={40} gradient={GRADIENTS.avatarLime} color="#0B1404" ring="#2A1F5C" />
@@ -581,6 +622,22 @@ function MoreHome({
         </PressSurface>
       </View>
 
+      <PressSurface
+        onPress={() => setPage('gear')}
+        accessibilityLabel="Gear Kaufberatung öffnen"
+        gradient={GRADIENTS.tileLime}
+        style={styles.gearTile}
+      >
+        <View style={styles.gearTileIcon}>
+          <AppIcon name="gear" size={30} color={COLORS.lime} />
+        </View>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={styles.moreTileTitle}>Gear</Text>
+          <Text style={[TYPE.label, { color: COLORS.limeText }]}>Kaufberatung · Scooter · Ski · Setup</Text>
+        </View>
+        <AppIcon name="chevron" size={18} color={COLORS.lime} />
+      </PressSurface>
+
       <PosterCard gradient={GRADIENTS.cloud} glow="rgba(207,255,58,0.25)">
         <Sticker label="Neu" tone="lime" />
         <Text style={styles.posterTitle}>Crew-Cloud</Text>
@@ -619,6 +676,7 @@ function MoreHub({
   common,
   connectionProps,
   onProfilePress,
+  badgeProps,
 }) {
   if (page === 'home') {
     return (
@@ -628,6 +686,7 @@ function MoreHub({
         setPage={setPage}
         connectionProps={connectionProps}
         onProfilePress={onProfilePress}
+        badgeProps={{ ...badgeProps, stats: common.stats }}
       />
     );
   }
@@ -637,7 +696,9 @@ function MoreHub({
       ? 'Crew'
       : page === 'chat'
         ? 'Chat'
-        : 'Memories';
+        : page === 'gear'
+          ? 'Gear'
+          : 'Memories';
 
   return (
     <View style={styles.moreSubPage}>
@@ -661,13 +722,28 @@ function MoreHub({
       {page === 'crew' && <CrewTab {...common} />}
       {page === 'chat' && <ChatTab {...common} />}
       {page === 'memories' && <MemoriesTab {...common} />}
+      {page === 'gear' && <GearTab {...common} />}
     </View>
   );
 }
 
-function BottomNav({ tab, onChange }) {
+function BottomNav({ tab, onChange, onSwipe }) {
+  const accent = useAccent();
+  const dockSwipe = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 6 &&
+        Math.abs(g.dx) > Math.abs(g.dy) * 1.05,
+      onPanResponderRelease: (_, g) => {
+        const far = Math.abs(g.dx) > 26 || Math.abs(g.vx) > 0.18;
+        if (far) onSwipe?.(g.dx < 0 ? 1 : -1);
+      },
+      onPanResponderTerminationRequest: () => true,
+    })
+  ).current;
+
   return (
-    <View style={styles.dockWrap}>
+    <View style={styles.dockWrap} {...dockSwipe.panHandlers}>
       <View style={[styles.dock, SHADOWS.dock]}>
         {PRIMARY_TABS.map(([id, icon, label]) => {
           const active = tab === id;
@@ -675,20 +751,38 @@ function BottomNav({ tab, onChange }) {
           return (
             <Pressable
               key={id}
-              onPress={() => onChange(id)}
+              onPress={() => {
+                if (!active) haptic.select();
+                onChange(id);
+              }}
               accessibilityRole="tab"
               accessibilityLabel={label}
               accessibilityState={{ selected: active }}
-              style={[styles.navItem, active && [styles.navItemActive, SHADOWS.cta]]}
+              style={[
+                styles.navItem,
+                active && [styles.navItemActive, { backgroundColor: accent.color, boxShadow: `0 12px 28px -10px ${accent.glow}` }],
+              ]}
             >
-              <AppIcon
-                name={icon}
-                size={active ? 22 : 23}
-                color={active ? COLORS.onLime : COLORS.text3}
-                strokeWidth={active ? 2.3 : 2}
-                fillOpacity={active ? 0.3 : 0.22}
-              />
-              {active ? <Text style={styles.navLabel}>{label}</Text> : null}
+              {active ? (
+                <PopIn key={id} from={0.7} style={styles.navInner}>
+                  <AppIcon
+                    name={icon}
+                    size={22}
+                    color={accent.ink}
+                    strokeWidth={2.3}
+                    fillOpacity={0.3}
+                  />
+                  <Text style={[styles.navLabel, { color: accent.ink }]}>{label}</Text>
+                </PopIn>
+              ) : (
+                <AppIcon
+                  name={icon}
+                  size={23}
+                  color={COLORS.text3}
+                  strokeWidth={2}
+                  fillOpacity={0.22}
+                />
+              )}
             </Pressable>
           );
         })}
@@ -771,20 +865,23 @@ const POSTERS = {
   coach: { title: 'Coach', subtitle: 'Trick des Tages, Session & KI' },
   skills: { title: 'Skills', subtitle: 'Skill-Baum, Wochenziel & Plan' },
   battle: { title: 'Battle', subtitle: 'S.K.A.T.E., Bingo & Verlauf' },
-  more: { title: 'Mehr', subtitle: 'Crew, Chat & Memories' },
+  feed: { title: 'Feed', subtitle: 'Stories, Clips, Likes & Spots' },
+  more: { title: 'Mehr', subtitle: 'Crew, Chat, Memories & Gear' },
 };
 
-function posterArt(tab, sport) {
-  if (tab === 'coach') return <MoonArt />;
-  if (tab === 'skills') return <StairsArt />;
-  if (tab === 'battle') return <TapeArt word={sport.battle} />;
-  if (tab === 'more') return <BubblesArt />;
+function posterArt(tab, sport, phase) {
+  if (tab === 'coach') return <MoonArt phase={phase} />;
+  if (tab === 'skills') return <StairsArt accent={sport.color} />;
+  if (tab === 'battle') return <TapeArt word={sport.battle} accent={sport.color} />;
+  if (tab === 'feed') return <PolaroidArt />;
+  if (tab === 'more') return <BubblesArt accent={sport.color} />;
   return null;
 }
 
 export default function App() {
   const [ready, setReady] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
   const [profile, setProfile] = useState(null);
   const [stats, setStatsState] = useState(EMPTY_STATS);
   const [tab, setTab] = useState('coach');
@@ -803,6 +900,40 @@ export default function App() {
     error: '',
   });
 
+  // Night Ride v2: Atmosphäre, Badge-Profilbild, Wisch-Gesten (nur Darstellung)
+  const phase = useSkyPhase();
+  const [avatarBadge, setAvatarBadge] = useState(null);
+  const dragX = useRef(new Animated.Value(0)).current;
+  const [swipeFrom, setSwipeFrom] = useState('right');
+  const swipeRef = useRef({ tab: 'coach', go: () => {} });
+
+  useEffect(() => {
+    localGet('ui:avatarBadge', null).then((v) => setAvatarBadge(v || null)).catch(() => {});
+  }, []);
+
+  const chooseAvatarBadge = (id) => {
+    setAvatarBadge(id);
+    localSet('ui:avatarBadge', id).catch(() => {});
+  };
+
+  const pan = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 8 &&
+        Math.abs(g.dx) > Math.abs(g.dy) * 1.1,
+      onPanResponderMove: (_, g) => dragX.setValue(g.dx),
+      onPanResponderRelease: (_, g) => {
+        const far = Math.abs(g.dx) > 36 || Math.abs(g.vx) > 0.2;
+        if (far) swipeRef.current.go(g.dx < 0 ? 1 : -1);
+        Animated.spring(dragX, { toValue: 0, friction: 7, tension: 80, useNativeDriver: false }).start();
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(dragX, { toValue: 0, useNativeDriver: false }).start();
+      },
+      onPanResponderTerminationRequest: () => true,
+    })
+  ).current;
+
   // Night Ride v2: Schriften laden. Scheitert das, startet die App mit Systemschrift.
   useEffect(() => {
     let done = false;
@@ -814,6 +945,12 @@ export default function App() {
     };
     Font.loadAsync(FONT_FILES).then(finish).catch(finish);
     const timer = setTimeout(finish, 6000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Night Ride v2: Ladeanimation mindestens einmal komplett zeigen (nur Darstellung)
+  useEffect(() => {
+    const timer = setTimeout(() => setIntroDone(true), 2600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -928,7 +1065,7 @@ export default function App() {
     await localSet('profile', next);
   };
 
-  if (!ready || !fontsReady) {
+  if (!ready || !fontsReady || !introDone) {
     return (
       <View style={styles.loadingScreen}>
         <StatusBar
@@ -936,11 +1073,7 @@ export default function App() {
           backgroundColor="transparent"
           barStyle="light-content"
         />
-        <ImageBackground
-          source={require('./assets/afterdark-loading.png')}
-          style={styles.loadingImage}
-          resizeMode="cover"
-        />
+        <LoadingScreen fontsReady={fontsReady} />
       </View>
     );
   }
@@ -997,6 +1130,22 @@ export default function App() {
     }
   };
 
+  // Wischen: nächster / vorheriger Tab (nutzt die bestehende handleTabChange)
+  swipeRef.current = {
+    tab,
+    go: (dir) => {
+      const order = PRIMARY_TABS.map(([id]) => id);
+      const i = order.indexOf(tab);
+      const next = order[i + dir];
+      if (!next) return;
+      haptic.select();
+      setSwipeFrom(dir > 0 ? 'right' : 'left');
+      handleTabChange(next);
+    },
+  };
+
+  const winter = profile.season === 'winter';
+
   const common = {
     sport,
     profile,
@@ -1036,18 +1185,34 @@ export default function App() {
     />
   );
 
-  const glow = tab === 'more' ? COLORS.violet : TAB_GLOW[tab];
+  // Sport-Farbwelt: Licht oben in der Farbe der Sportart
+  const accent = accentFor(sport.color);
+  const glow = tab === 'parks' ? null : accent.color;
   const poster = tab === 'more'
     ? (morePage === 'home' ? POSTERS.more : null)
     : POSTERS[tab];
 
   return (
+    <AccentContext.Provider value={accent}>
     <View style={styles.safe}>
       <StatusBar
         barStyle="light-content"
         backgroundColor={COLORS.bg}
       />
 
+      {winter ? <SnowFall /> : null}
+
+      <Animated.View
+        style={[
+          styles.scroll,
+          {
+            transform: [
+              { translateX: dragX.interpolate({ inputRange: [-400, 400], outputRange: [-60, 60], extrapolate: 'clamp' }) },
+            ],
+          },
+        ]}
+        {...pan.panHandlers}
+      >
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.page}
@@ -1080,7 +1245,11 @@ export default function App() {
                 pressed && { opacity: 0.8 },
               ]}
             >
-              <Avatar uri={profile.avatarUri} size={36} />
+              {avatarBadge ? (
+                <BadgeImage id={avatarBadge} size={36} />
+              ) : (
+                <Avatar uri={profile.avatarUri} size={36} />
+              )}
               <Text style={styles.profileNameChip} numberOfLines={1}>
                 @{profile.nickname}
               </Text>
@@ -1090,13 +1259,21 @@ export default function App() {
 
         {poster ? (
           <ScreenPoster
+            key={`${tab}-${morePage}`}
             title={poster.title}
             subtitle={poster.subtitle}
-            art={posterArt(tab, sport)}
+            sportName={sport.name}
+            phaseLabel={PHASE_LABEL[phase]}
+            art={posterArt(tab, sport, phase)}
+            phase={phase}
+            accent={sport.color}
+            winter={winter}
+            parallax={dragX}
+            from={swipeFrom}
           />
         ) : null}
 
-        {tab !== 'more' && tab !== 'parks' ? rider : null}
+        {tab !== 'more' && tab !== 'parks' && tab !== 'feed' ? rider : null}
 
         {tab === 'coach' && (
           <CoachTab
@@ -1117,6 +1294,16 @@ export default function App() {
           <ParksTab {...common} rider={rider} />
         )}
 
+        {tab === 'feed' && (
+          <FeedTab
+            {...common}
+            onOpenSpot={() => {
+              setSwipeFrom('left');
+              handleTabChange('parks');
+            }}
+          />
+        )}
+
         {tab === 'more' ? (
           <MoreHub
             page={morePage}
@@ -1124,17 +1311,30 @@ export default function App() {
             common={common}
             connectionProps={connectionProps}
             onProfilePress={changeProfilePhoto}
+            badgeProps={{ avatarBadge, onSetAvatar: chooseAvatarBadge }}
           />
         ) : null}
 
         <View style={{ height: 28 }} />
       </ScrollView>
+      </Animated.View>
 
       <BottomNav
         tab={tab}
-        onChange={handleTabChange}
+        onChange={(next) => {
+          setSwipeFrom('right');
+          handleTabChange(next);
+        }}
+        onSwipe={(dir) => swipeRef.current.go(dir)}
+      />
+
+      <ShareHost sport={sport} profile={profile} />
+      <BadgeUnlockWatcher
+        stats={stats}
+        onShare={(b) => openShare({ kind: 'badge', badge: b.id, name: b.name, accent: b.color, sub: b.goal })}
       />
     </View>
+    </AccentContext.Provider>
   );
 }
 
@@ -1449,6 +1649,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  gearTile: {
+    minHeight: 92,
+    borderRadius: RADII.cardSm,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+  },
+  gearTileIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: COLORS.limeSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   crewTile: {
     height: 184,
     borderRadius: RADII.poster,
@@ -1580,7 +1796,7 @@ const styles = StyleSheet.create({
   dockWrap: {
     paddingHorizontal: 14,
     paddingTop: 6,
-    paddingBottom: 12,
+    paddingBottom: Platform.OS === 'android' ? 34 : 12,
     backgroundColor: COLORS.bg,
   },
   dock: {
@@ -1593,9 +1809,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   navItem: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 46,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -1603,13 +1819,18 @@ const styles = StyleSheet.create({
   },
   navItemActive: {
     width: 'auto',
-    paddingLeft: 16,
-    paddingRight: 20,
+    paddingLeft: 11,
+    paddingRight: 13,
     backgroundColor: COLORS.lime,
+  },
+  navInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   navLabel: {
     ...TYPE.button,
     color: COLORS.onLime,
-    fontSize: 14,
+    fontSize: 12,
   },
 });

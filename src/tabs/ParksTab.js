@@ -620,7 +620,7 @@ export default function ParksTab({ sport, profile, rider = null }) {
         <View style={styles.row}>
           <IconTile name="map" size={46} iconSize={22} gradient={{ colors: ['#9CCBFF', '#2A63B8'], angle: 145 }} color="#071A36" radius={16} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Title>Spots in der App</Title>
+            <Title>In-App-Parksuche</Title>
             <Text style={TYPE.label} numberOfLines={3}>
               Suche passende Anlagen für {sport.name}. Treffer erscheinen direkt auf der Karte und in der Liste.
             </Text>
@@ -688,7 +688,7 @@ export default function ParksTab({ sport, profile, rider = null }) {
         </View>
 
         <Button
-          title={busy ? 'Suche läuft…' : 'Spots in der App suchen'}
+          title={busy ? 'Suche läuft…' : 'Parks in After[Dark suchen'}
           icon="pin"
           disabled={busy}
           onPress={search}
@@ -888,7 +888,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   resultsMapWrap: {
-    height: 580,
+    height: 620,
     borderRadius: RADII.card,
     overflow: 'hidden',
     backgroundColor: '#070D19',

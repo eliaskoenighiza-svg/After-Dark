@@ -2,15 +2,18 @@ import React, { memo, useId } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, G, LinearGradient, Mask, Path, RadialGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
 import { COLORS, FONTS, TYPE } from '../theme';
+import { Breathe } from './motion';
+import { MOON_POS } from './ambient';
 
 // Night Ride v2 – Poster-Grafiken. Reine Darstellung, pointerEvents none.
 
 const uid = (raw) => `a${String(raw).replace(/[^a-zA-Z0-9]/g, '')}`;
 
-export function MoonArt({ width = 250, height = 228, style }) {
+export function MoonArt({ width = 250, height = 228, phase = 'night', style }) {
   const id = uid(useId());
+  const pos = MOON_POS[phase] || MOON_POS.night;
   return (
-    <View pointerEvents="none" style={[{ position: 'absolute', right: -34, top: -6 }, style]}>
+    <View pointerEvents="none" style={[{ position: 'absolute', right: pos.right, top: pos.top, transform: [{ scale: pos.scale }] }, style]}>
       <Svg width={width} height={height} viewBox="0 0 220 200">
         <Defs>
           <RadialGradient id={`${id}h`} cx="50%" cy="50%" r="50%">
@@ -138,8 +141,9 @@ export function SmallArt({ kind = 'crew', style }) {
   );
 }
 
-export function RampArt({ height = 128, colors = ['#16305A', '#0C1A33'], style }) {
+export function RampArt({ height = 128, colors = ['#16305A', '#0C1A33'], moon = true, snow = false, style }) {
   const id = uid(useId());
+  if (snow) return <SnowHillArt height={height} moon={moon} style={style} />;
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, style]}>
       <Svg width="100%" height={height} viewBox="0 0 316 128" preserveAspectRatio="xMidYMax slice">
@@ -150,11 +154,45 @@ export function RampArt({ height = 128, colors = ['#16305A', '#0C1A33'], style }
           </LinearGradient>
         </Defs>
         <Rect x="0" y="0" width="316" height="128" fill={`url(#${id}s)`} />
-        <Circle cx="250" cy="36" r="16" fill="#E6FDFF" fillOpacity={0.9} />
-        <Circle cx="258" cy="30" r="14" fill={colors[0]} />
+        {moon ? <Circle cx="250" cy="36" r="16" fill="#E6FDFF" fillOpacity={0.9} /> : null}
+        {moon ? <Circle cx="258" cy="30" r="14" fill={colors[0]} /> : null}
         <Path d="M0 128 L0 50 L14 50 L14 58 C14 100 50 116 110 116 L180 116 L180 92 L240 92 L240 116 L316 116 L316 128 Z" fill="#0A111F" />
         <Rect x="0" y="46" width="18" height="6" rx="3" fill="#CFFF3A" />
         <Rect x="176" y="88" width="68" height="5" rx="2.5" fill="#6CB6FF" />
+      </Svg>
+    </View>
+  );
+}
+
+// Winter: Schneehügel statt Rampe
+export function SnowHillArt({ height = 128, moon = true, style }) {
+  const id = uid(useId());
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, style]}>
+      <Svg width="100%" height={height} viewBox="0 0 316 128" preserveAspectRatio="xMidYMax slice">
+        <Defs>
+          <LinearGradient id={`${id}s`} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#1C3656" />
+            <Stop offset="1" stopColor="#0C1A33" />
+          </LinearGradient>
+          <LinearGradient id={`${id}h`} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#F4F9FF" />
+            <Stop offset="1" stopColor="#9DB6D6" />
+          </LinearGradient>
+          <LinearGradient id={`${id}b`} x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#8FA9CC" />
+            <Stop offset="1" stopColor="#3D5577" />
+          </LinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="316" height="128" fill={`url(#${id}s)`} />
+        {moon ? <Circle cx="250" cy="34" r="16" fill="#E6FDFF" fillOpacity={0.9} /> : null}
+        {moon ? <Circle cx="258" cy="28" r="14" fill="#1C3656" /> : null}
+        <Circle cx="40" cy="22" r="1.4" fill="#F4F6FB" fillOpacity={0.7} />
+        <Circle cx="120" cy="14" r="1.1" fill="#F4F6FB" fillOpacity={0.6} />
+        <Circle cx="190" cy="40" r="1.3" fill="#F4F6FB" fillOpacity={0.5} />
+        <Path d="M0 128 L0 82 C40 62 80 64 120 84 C150 98 170 70 216 66 C256 62 290 78 316 74 L316 128 Z" fill={`url(#${id}b)`} />
+        <Path d="M0 128 L0 102 C50 86 90 90 140 104 C180 114 220 90 270 92 C292 93 306 98 316 100 L316 128 Z" fill={`url(#${id}h)`} />
+        <Rect x="132" y="96" width="44" height="5" rx="2.5" fill="#CFFF3A" transform="rotate(-8 154 98)" />
       </Svg>
     </View>
   );
@@ -219,10 +257,12 @@ export function PolaroidArt() {
 }
 
 // Session-Zifferblatt: 48 Segmente, gefüllt nach Minuten innerhalb der laufenden Stunde.
-export const SessionDial = memo(function SessionDial({ minutes = 0, running = false, children }) {
+export const SessionDial = memo(function SessionDial({ minutes = 0, seconds = 0, running = false, children }) {
   const size = 224;
   const segs = 48;
   const filled = running ? Math.min(segs, Math.floor(((minutes % 60) / 60) * segs) + 1) : 0;
+  // Lauflicht: ein heller Punkt wandert pro Sekunde ein Segment weiter
+  const sweep = running ? seconds % segs : -1;
   const items = [];
   for (let i = 0; i < segs; i += 1) {
     const a = (i / segs) * 2 * Math.PI - Math.PI / 2;
@@ -236,7 +276,7 @@ export const SessionDial = memo(function SessionDial({ minutes = 0, running = fa
       <Path
         key={i}
         d={`M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`}
-        stroke={i < filled ? COLORS.lime : '#1C2744'}
+        stroke={i === sweep ? '#F4F6FB' : i < filled ? COLORS.lime : (running && (i === (sweep + segs - 1) % segs || i === (sweep + segs - 2) % segs)) ? '#5C7A2A' : '#1C2744'}
         strokeWidth={9}
         strokeLinecap="round"
       />
@@ -244,6 +284,7 @@ export const SessionDial = memo(function SessionDial({ minutes = 0, running = fa
   }
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }}>
+      <Breathe active={running} size={size + 30} />
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         {items}
       </Svg>

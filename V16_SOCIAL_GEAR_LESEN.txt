@@ -1,0 +1,33 @@
+After[Dark V16 – SOCIAL + GEAR
+================================
+
+Neu:
+- eigener Feed-Tab unten
+- Stories (24 Stunden)
+- Foto- und Video-Clips
+- Likes
+- Kommentare + eigene Kommentare löschen
+- Spot-Verlinkung aus den zuletzt unter Parks gefundenen Spots
+- Sichtbarkeit: Crew oder öffentlich
+- Posts melden
+- Nutzer blockieren
+- eigene Posts löschen
+- Gear/Kaufberatung unter Mehr > Gear
+- Fokus auf Scooter-Parts und Ski, zusätzlich Snowboard/BMX/Skate/MTB
+- KI-Beratung nutzt die bereits vorhandene Cloudflare-KI
+- Basisberatung funktioniert auch, falls die KI kurz offline ist
+
+Wichtig:
+Die Social-Funktionen brauchen einmal die neue Supabase-Datenbankstruktur.
+Dazu COPY_SOCIAL_SQL.bat starten. Das SQL wird in die Zwischenablage kopiert.
+Dann im Supabase Dashboard im SQL Editor einfügen und ausführen.
+
+Es wurden KEINE neuen nativen Expo-Pakete hinzugefügt.
+Wenn deine aktuelle Basis-App bereits expo-video, expo-image-picker und expo-file-system enthält,
+ist für diese V16-Funktionen keine neue APK nötig. Nach dem Test kann V16 über EAS Update verteilt werden.
+
+Datenschutz:
+- Standard ist Crew-Sichtbarkeit, wenn eine Crew vorhanden ist.
+- Stories laufen nach 24 Stunden ab.
+- Medien liegen in einem privaten Supabase Storage Bucket und werden per Signed URL geladen.
+- Keine privaten Wohnadressen, Schulen oder Live-Standorte als Spot posten.

@@ -2,8 +2,10 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import AppIcon from '../components/AppIcon';
 import { Avatar, Bubble, IconTile, SecondaryButton, Tag } from '../design/kit';
+import { BadgeVideo } from '../design/badges';
 import { Card, Button, Field, Muted, Notice, Pill, Title } from '../components/UI';
 import { COLORS, FONTS, GRADIENTS, RADII, TYPE } from '../theme';
+import { EmptyScene } from '../design/ambient';
 import { dumpAllData, localGet, localSet, restoreAllData, sharedGet, sharedSet } from '../storage';
 import { weeklyReviewAI } from '../services/ai';
 import { cloudConfigured, createCrewCloud, getMyCrews, joinCrewCloud, syncCloudProfile, setMySpotCloud, clearMySpotCloud, getActiveCrewSpotsCloud, syncMyStatsCloud, getCrewLeaderboardCloud, setMyWeeklyScoreCloud, getWeeklyBattleLeaderboardCloud, getPreviousWeekWinnerCloud, getWeeklyGoalsCloud, uploadCrewSpotPhotoCloud, getCrewSpotPhotosCloud, deleteMyCrewSpotPhotoCloud } from '../services/supabase';
@@ -377,9 +379,12 @@ export default function CrewTab({ profile, sport, stats }) {
       {notice ? <Notice>{notice}</Notice> : null}
 
       <Card>
-        <View style={styles.headRow}>
-          <Title>Crew-Cloud</Title>
-          <Tag label={cloudConfigured() ? 'Supabase' : 'Nicht eingerichtet'} tone={cloudConfigured() ? 'violet' : 'pink'} dot />
+        <View style={[styles.headRow, { alignItems: 'center' }]}>
+          <BadgeVideo id="crew" size={72} />
+          <View style={{ flex: 1, gap: 8, alignItems: 'flex-start' }}>
+            <Title>Crew-Cloud</Title>
+            <Tag label={cloudConfigured() ? 'Supabase' : 'Nicht eingerichtet'} tone={cloudConfigured() ? 'violet' : 'pink'} dot />
+          </View>
         </View>
         <Muted>Das ist die neue echte Crew-Basis. Sobald Supabase in der App eingetragen ist, kann jeder auf seinem eigenen Handy eine Crew erstellen oder per Code beitreten.</Muted>
         {cloudNotice ? <Notice tone={cloudNotice.includes('Code:') || cloudNotice.includes('beigetreten') ? 'volt' : 'pink'}>{cloudNotice}</Notice> : null}
@@ -426,7 +431,7 @@ export default function CrewTab({ profile, sport, stats }) {
                   <Tag label={`noch ${minutes} min`} tone="cyan" />
                 </View>
               );
-            }) : <Muted>Gerade hat niemand einen aktiven Spot eingetragen.</Muted>}
+            }) : <EmptyScene kind="crew" accent={COLORS.violet} />}
           </>
         ) : (outside.length ? outside.map((x) => (
           <View key={x.nickname} style={styles.out}>
@@ -437,7 +442,7 @@ export default function CrewTab({ profile, sport, stats }) {
             </View>
             <Tag label={`${x.sport} · lokal`} tone="neutral" />
           </View>
-        )) : <Muted>Gerade hat niemand einen Spot eingetragen.</Muted>)}
+        )) : <EmptyScene kind="crew" accent={COLORS.violet} />)}
       </Card>
 
       <Card>
